@@ -206,10 +206,18 @@ def prepare_drag_profile(request):
             following = following-1,
             events = DragEvent.objects.filter(performer=user).count()
         )
+
+        data = {
+            "result" : data
+        }
+
+        print("succes : ", data)
     except Exception as E:
         data = {
             "status" : "false"
         }
+
+        print("fail : ",data)
     
     return Response(data)
 
