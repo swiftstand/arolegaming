@@ -1,14 +1,3 @@
-#-------------------------------------------------------------------------------
-# Name:        module1
-# Purpose:
-#
-# Author:      sulaiman hammed swift
-#
-# Created:     03-09-2020
-# Copyright:   (c) nxtgen technologies 2020
-# Licence:     <GLI>
-#-------------------------------------------------------------------------------
-
 
 
 from django.db import models
@@ -136,7 +125,7 @@ class User(AbstractBaseUser):
                     "key":3,
                     "title":"Followed Performers Events Notifications",
                     "value":True
-                }]
+                }],
 
                 [{
                     "key":1,

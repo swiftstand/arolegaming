@@ -185,39 +185,27 @@ class MultipartJsonParser(parsers.MultiPartParser):
 def prepare_drag_profile(request):
     user = request.user
     profile = DragProfile.objects.get(owner=user)
-    follower = FollowManager.objects.get(owner=user)
+    # follower = FollowManager.objects.get(owner=user)
 
-    number_of_followers = follower.count_followers()
-    following = follower.count_following()
+    # number_of_followers = follower.count_followers()
+    # following = follower.count_following()
 
-    try:
-        data = dict(
-            status=True,
-            username = user.username,
-            fullname = user.fullname,
-            image = settings.MY_SITE+profile.image.url,
-            about_me = profile.about_me,
-            city = profile.city,
-            availability = profile.availability,
-            socials = json.loads(profile.social_links),
-            website_url = profile.website_url,
-            tip_url = profile.tip_url,
-            followers = number_of_followers-1,
-            following = following-1,
-            events = DragEvent.objects.filter(performer=user).count()
-        )
-
-        data = {
-            "result" : data
-        }
-
-        print("succes : ", data)
-    except Exception as E:
-        data = {
-            "status" : "false"
-        }
-
-        print("fail : ",data)
+    data = dict(
+        status=True,
+        username = user.username,
+        fullname = user.fullname,
+        image = settings.MY_SITE+profile.image.url,
+        about_me = profile.about_me,
+        city = profile.city,
+        availability = profile.availability,
+        socials = json.loads(profile.social_links),
+        website_url = profile.website_url,
+        tip_url = profile.tip_url,
+        followers = 0,
+        following = 0,
+        events = DragEvent.objects.filter(performer=user).count()
+    )
+    print("succes : ", data)   
     
     return Response(data)
 
