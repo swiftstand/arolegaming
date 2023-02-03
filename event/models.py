@@ -17,6 +17,9 @@ class DragEvent(models.Model):
     website = models.CharField(max_length=200, default='')
     hosts = models.CharField(max_length= 100000, null=True)
     banner = models.ImageField(upload_to='event_pics',null=True)
+    raw_date = models.IntegerField(default=0)
+    event_date = models.CharField(default='', max_length=1000)
+    event_time = models.CharField(default='', max_length=1000)
     date_uploaded = models.DateTimeField(verbose_name='date joined', default=timezone.now)
     date_updated = models.DateTimeField(verbose_name='date joined', auto_now=True)
 

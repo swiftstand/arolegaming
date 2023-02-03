@@ -171,14 +171,14 @@ class DragProfile(models.Model):
     approved=models.BooleanField(default=False)
     locked=models.BooleanField(default=False)
     availability = models.BooleanField(default=True)
-    website_url = models.URLField(max_length=1000, null=True)
-    tip_url = models.URLField(max_length=1000, null=True)
+    website_url = models.CharField(max_length=1000, null=True)
+    tip_url = models.CharField(max_length=1000, null=True)
     city=models.TextField(null=False, blank=False,default='input address', editable=False)
-    instagram = models.URLField(max_length=1000, null=True)
-    tiktok = models.URLField(max_length=1000, null=True)
-    twitter = models.URLField(max_length=1000, null=True)
-    youtube = models.URLField(max_length=1000, null=True)
-    facebook = models.URLField(max_length=1000, null=True)
+    instagram = models.CharField(max_length=1000, null=True)
+    tiktok = models.CharField(max_length=1000, null=True)
+    twitter = models.CharField(max_length=1000, null=True)
+    youtube = models.CharField(max_length=1000, null=True)
+    facebook = models.CharField(max_length=1000, null=True)
     mail = models.CharField(max_length=1000, null=True)
     
     
@@ -195,7 +195,7 @@ class DragProfile(models.Model):
 
 class FollowManager(models.Model):
     owner=models.OneToOneField(settings.AUTH_USER_MODEL,on_delete=models.CASCADE)
-    followers = models.ManyToManyField(settings.AUTH_USER_MODEL,related_name='user_followers', related_query_name='user_follower', editable=False)
+    followers = models.ManyToManyField(settings.AUTH_USER_MODEL,related_name='user_followers', related_query_name='user_follower', editable=False, )
     following = models.ManyToManyField(settings.AUTH_USER_MODEL, related_name='followed_users', related_query_name='followed_user', editable=False)
 
     def count_followers(self):

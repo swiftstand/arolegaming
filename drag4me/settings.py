@@ -132,6 +132,10 @@ USE_TZ = True
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/3.0/howto/static-files/
+TEST = "https://drag4me.pythonanywhere.com"
+LOCAL =  "http://192.168.27.56:8000"
+PROD = ""
+MY_SITE = TEST
 
 LOGIN_REDIRECT_URL= 'index'
 LOGIN_URL = 'login'
@@ -140,6 +144,7 @@ STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 STATIC_URL = '/static/'
 
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+# MEDIA_URL = '{}/media/'.format(MY_SITE)
 MEDIA_URL = '/media/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
@@ -151,6 +156,3 @@ CORS_ORIGIN_ALLOW_ALL = True
 NUMBER_OF_TICKETS = 1000
 
 TICKET_COST = 3000
-
-
-MY_SITE = "http://192.168.173.56:8000"

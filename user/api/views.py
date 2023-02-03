@@ -44,6 +44,12 @@ def login(request):
         data['satus']= 'success'
         data['token']= token.key
         data['fullname']= user.fullname
+        data['performer'] = user_obj.is_drag_performer
+        if user_obj.is_drag_performer:
+            profile = DragProfile.objects.get(owner = user)
+            data['approval'] = profile.approved
+        else:
+            data['approval'] = False
     else:
         data = serializer.errors
         data['status']='fail'
@@ -63,6 +69,8 @@ def Register(request):
         data['token']= token.key
         data['email']= user.email
         data['fullname']= user.fullname
+        data['performer'] = False
+        data['approval'] = False
     else:
         data = serializer.errors
         data['status']='fail'
@@ -185,10 +193,12 @@ class MultipartJsonParser(parsers.MultiPartParser):
 def prepare_drag_profile(request):
     user = request.user
     profile = DragProfile.objects.get(owner=user)
-    # follower = FollowManager.objects.get(owner=user)
+    follower = FollowManager.objects.get(owner=user)
 
-    # number_of_followers = follower.count_followers()
-    # following = follower.count_following()
+    number_of_followers = follower.count_followers()
+
+    following = follower.count_following()
+    print(number_of_followers, following)
 
     data = dict(
         status=True,
@@ -201,8 +211,8 @@ def prepare_drag_profile(request):
         socials = json.loads(profile.social_links),
         website_url = profile.website_url,
         tip_url = profile.tip_url,
-        followers = 0,
-        following = 0,
+        followers = number_of_followers-1,
+        following = following-1,
         events = DragEvent.objects.filter(performer=user).count()
     )
     print("succes : ", data)   
@@ -231,11 +241,6 @@ def drag_status(request):
     return Response(result)
 
 
-    
-
-
-
-
 
 
 class DragProfileViewSet(viewsets.ModelViewSet):
@@ -252,6 +257,12 @@ class DragProfileViewSet(viewsets.ModelViewSet):
             ser = CreateDragProfileSerializer(data=self.request.data)
             if ser.is_valid():
                 profile = ser.save(self.request.user, profile_info)
+                if profile:
+                    try:
+                        new_manager = FollowManager.objects.create(owner=self.request.user)
+                        new_manager.save()
+                    except:
+                        non = "null"
                 return Response({'status':'success'})
 
         elif self.request.method == "GET":
@@ -281,3 +292,4 @@ class DragProfileViewSet(viewsets.ModelViewSet):
                 profile = ser.update(profile_info, self.request.user)
 
             return Response({"status" : True})
+

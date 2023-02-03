@@ -7,8 +7,8 @@ from rest_framework.decorators import api_view, permission_classes, parser_class
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.authtoken.models import Token
 from event.models import DragEvent
-from user.models import User
-from event.api.serializers import CreateDragEventSerializer, SerializeAllEvents
+from user.models import User,DragProfile
+from event.api.serializers import CreateDragEventSerializer, SerializeAllEvents, EventHostSerializer
 from random import choice
 from string import ascii_letters
 import itertools
@@ -17,7 +17,7 @@ from rest_framework import viewsets
 from django.utils.translation import gettext_lazy as _
 from rest_framework import parsers 
 from .pagination import CustomPagination
-from rest_framework import serializers
+from datetime import datetime
 
 
 
@@ -38,30 +38,102 @@ class DragEventViewSet(viewsets.ModelViewSet):
         if self.request.method == "POST":
             print('HERE')
             info = json.loads(self.request.data.get('data'))
+            print(info)
+            # vv = info.get('rawDate')
+
+            # print(datetime.fromtimestamp(vv/1e3))
             ser = CreateDragEventSerializer(data=self.request.data)
             if ser.is_valid():
                 profile = ser.save(self.request.user, info)
                 return Response({'status':'success'})
 
-    @action(detail=False,  methods=["GET, PUT"], permission_classes=[IsAuthenticated])
+
+    @action(detail=False,  methods=["GET", "PUT"], permission_classes=[IsAuthenticated])
     def edit_event(self, pk=None):
-        if pk:
-            print('EDIT')
+        if self.request.method == "GET":
+            performers = DragProfile.objects.filter(approved = True).values_list('owner', flat=True)
+            performers = User.objects.filter(pk__in  = performers).exclude(pk = self.request.user.pk )
+
+            d_serializer = EventHostSerializer(performers, many=True)
+            general_hosts= json.loads(json.dumps(d_serializer.data))
+            
+            event_pk = self.request.GET.get('q', None)
+            if int(event_pk) > 0:
+                event= DragEvent.objects.get(pk = event_pk)
+                event_hosts_pk = json.loads(event.hosts)
+                event_hosts = User.objects.filter(pk__in = event_hosts_pk).exclude(pk = self.request.user.pk )
+                d_serializer = EventHostSerializer(event_hosts, many=True)
+                result= json.loads(json.dumps(d_serializer.data))
+                event_serializer = SerializeAllEvents(event)
+                event_obj = json.loads(json.dumps(event_serializer.data))
+
+                data = dict(
+                    hosts = result,
+                    general = self.paginate_queryset(general_hosts),
+                    status = "success",
+                    event = event_obj
+                )
+                print(data)
+                return Response(data)
+            
+            else:
+
+                print(self.paginate_queryset(general_hosts))
+                data = dict(
+                    hosts = [],
+                    general = self.paginate_queryset(general_hosts),
+                    status = "success"
+                )
+
+                return Response(data)
+        else:
+            event_pk = self.request.data.get('id')
+            print("EV : ", event_pk)
             info = json.loads(self.request.data.get('data'))
             ser = CreateDragEventSerializer(data=self.request.data)
             if ser.is_valid():
-                profile = ser.save(self.request.user, info)
+                profile = ser.update(event_pk, info)
                 return Response({'status':'success'})
 
     @action(detail=False,  methods=["GET"], permission_classes=[IsAuthenticated])
-    def event_detail(self, pk=None):
+    def event_detail(self, serializer):
+        print(serializer)
+        pk =  self.request.GET.get('q', None)
         if pk:
-            print('EDIT')
-            info = json.loads(self.request.data.get('data'))
-            ser = CreateDragEventSerializer(data=self.request.data)
-            if ser.is_valid():
-                profile = ser.save(self.request.user, info)
-                return Response({'status':'success'})
+            try:
+                event = DragEvent.objects.get(pk=pk)
+                event_hosts = json.loads(event.hosts)
+                host_users = User.objects.filter(id__in = event_hosts)
+                creator = User.objects.get(pk = self.request.user.pk)
+
+                host_serializer = EventHostSerializer(host_users, many=True)
+                creator_serializer = EventHostSerializer(creator)
+
+                hosts = json.loads(json.dumps(host_serializer.data))
+                performer = json.loads(json.dumps(creator_serializer.data))
+
+                if event.performer == self.request.user:
+                    owner = True
+                else:
+                    owner = False
+
+                data = dict(
+                    status = True,
+                    creator_info=performer,
+                    hosts_list = hosts,
+                    owner = owner,
+                    size = len(hosts)
+                )
+                print("DaTA : ", data)
+                return Response(data)
+            except Exception as e :
+                print(e)
+        data =dict(
+            status = False
+        )
+        print("DaTA : ", data)
+        return Response(data)
+
 
     @action(detail=False,  methods=["DELETE"], permission_classes=[IsAuthenticated])
     def event_delete(self, pk=None):
@@ -111,16 +183,26 @@ class ListEventViewSet(viewsets.ModelViewSet):
     @action(detail=False,  methods=["GET"], permission_classes=[IsAuthenticated])
     def profile_event(self, serializer):
         query = self.get_queryset()
-        # owner=self.request.content_params['user']
-        owner = 'tara_hoot'
-        print(self.request.GET.get('q', None))
-        # owner = self.request.data.get('user')
+        owner = self.request.GET.get('q', None)
         if owner:
-            user = User.objects.get(username=owner)
-            query = query.filter(performer=user)
-            serializer = self.serializer_class(query,many=True)
-            result= json.loads(json.dumps(serializer.data))
+            try:
+                user = User.objects.get(email=owner)
+                query = query.filter(performer=user)
+                serializer = self.serializer_class(query,many=True)
+                result= json.loads(json.dumps(serializer.data))
+                data= {
+                    "status" : True,
+                    "result" :  self.paginate_queryset(result)
+                }
+                
+
+            except Exception as e:
+                print(e)
+
+                data = dict(
+                    status = False,
+                )
+            return Response(data)
+        
     
-            print(self.paginate_queryset(result))
-            return Response(self.paginate_queryset(result))
 
