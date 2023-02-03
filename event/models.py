@@ -25,3 +25,5 @@ class DragEvent(models.Model):
 
 
 
+    def __str__(self) -> str:
+        return '{} hosted by @{}'.format(self.title, self.performer.username)

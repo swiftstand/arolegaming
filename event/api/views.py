@@ -36,12 +36,7 @@ class DragEventViewSet(viewsets.ModelViewSet):
     @action(detail=False,  methods=["POST"], permission_classes=[IsAuthenticated])
     def handle_events(self, serializer):
         if self.request.method == "POST":
-            print('HERE')
             info = json.loads(self.request.data.get('data'))
-            print(info)
-            # vv = info.get('rawDate')
-
-            # print(datetime.fromtimestamp(vv/1e3))
             ser = CreateDragEventSerializer(data=self.request.data)
             if ser.is_valid():
                 profile = ser.save(self.request.user, info)

@@ -45,6 +45,7 @@ class CreateDragEventSerializer(serializers.ModelSerializer):
     def update(self,event,info:dict):
         new_event= DragEvent.objects.get(pk= event)
 
+        new_event.banner = self.validated_data['banner']
         new_event.title = info.get('eventTitle')
         new_event.details = info.get('eventDetail')
         new_event.city = info.get('city')

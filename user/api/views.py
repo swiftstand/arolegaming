@@ -250,6 +250,14 @@ class DragProfileViewSet(viewsets.ModelViewSet):
     permission_classes = [
         permissions.IsAuthenticatedOrReadOnly]
 
+    @action(detail=False,  methods=['GET'], permission_classes=[IsAuthenticated])
+    def check_created(self, serializer):
+        data = dict(
+            already = self.request.user.is_drag_performer
+        )
+
+        return Response(data)
+
     @action(detail=False,  methods=['POST', 'GET', 'PUT'], permission_classes=[IsAuthenticated])
     def perform_create(self, serializer):
         if self.request.method == "POST":
