@@ -136,7 +136,7 @@ USE_TZ = True
 TEST = "https://drag4me.pythonanywhere.com"
 LOCAL =  "http://192.168.27.56:8000"
 PROD = ""
-MY_SITE = LOCAL
+MY_SITE = TEST
 
 LOGIN_REDIRECT_URL= 'index'
 LOGIN_URL = 'login'
