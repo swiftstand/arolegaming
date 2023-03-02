@@ -36,6 +36,8 @@ class CreateDragEventSerializer(serializers.ModelSerializer):
         new_event.event_time = info.get('eventTime')
         new_event.raw_date = info.get('rawDate')
 
+        print(info.get('eventTime'))
+
         new_event.save()
 
         print(new_event.raw_date)
@@ -59,6 +61,8 @@ class CreateDragEventSerializer(serializers.ModelSerializer):
         new_event.event_date = info.get('eventDate')
         new_event.event_time = info.get('eventTime')
         new_event.raw_date = info.get('rawDate')
+
+        print(info.get('eventTime'))
 
         new_event.save()
 
@@ -141,7 +145,7 @@ class EventHostSerializer(serializers.ModelSerializer):
         return DragEvent.objects.filter(performer=obj).count()
     class Meta:
         model = User
-        fields = ('id','username', 'tip_url', 'website_url','about_me','availability','fullname', 'city', 'image', 'followers', 'following', 'event', 'socials')
+        fields = ('id','username', 'email','tip_url', 'website_url','about_me','availability','fullname', 'city', 'image', 'followers', 'following', 'event', 'socials')
 
 class CitySerializer(serializers.ModelSerializer):
     value = serializers.SerializerMethodField()

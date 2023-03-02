@@ -77,7 +77,9 @@ class DragEventViewSet(viewsets.ModelViewSet):
     def edit_event(self, pk=None):
         if self.request.method == "GET":
             event_pk = self.request.GET.get('q', None)
-            print(event_pk)
+            all_cities = City.objects.all()
+            city_serializer = CitySerializer(all_cities, many=True)
+            cities = json.loads(json.dumps(city_serializer.data))
             if int(event_pk) > 0:
                 event= DragEvent.objects.get(pk = event_pk)
                 event_hosts_pk = json.loads(event.hosts)
@@ -87,9 +89,7 @@ class DragEventViewSet(viewsets.ModelViewSet):
                 event_serializer = SerializeAllEvents(event)
                 event_obj = json.loads(json.dumps(event_serializer.data))
 
-                all_cities = City.objects.all()
-                city_serializer = CitySerializer(all_cities, many=True)
-                cities = json.loads(json.dumps(city_serializer.data))
+                
                 print("CITIES\n", cities)
                 data = dict(
                     hosts = result,
@@ -103,7 +103,8 @@ class DragEventViewSet(viewsets.ModelViewSet):
 
                 data = dict(
                     hosts = [],
-                    status = "success"
+                    status = "success",
+                    cities = cities,
                 )
 
                 return Response(data)
@@ -115,6 +116,27 @@ class DragEventViewSet(viewsets.ModelViewSet):
             if ser.is_valid():
                 profile = ser.update(event_pk, info)
                 return Response({'status':'success'})
+
+
+    @action(detail=False,  methods=["DELETE"],permission_classes=[IsAuthenticated])
+    def event_delete(self, serializer):
+        event_id = self.request.GET.get('q', None)
+        # event_id = None
+        if event_id:
+            event = DragEvent.objects.get(pk=event_id)
+            if event.performer.pk == self.request.user.pk:  
+                event.delete()
+
+                data= dict(
+                    status=True,
+                )
+
+                return Response(data)
+            
+        data= dict(status=False)
+
+        return Response(data)
+            
 
     @action(detail=False,  methods=["GET"])
     def event_detail(self, serializer):
@@ -172,17 +194,6 @@ class DragEventViewSet(viewsets.ModelViewSet):
         )
         print("DaTA : ", data)
         return Response(data)
-
-
-    @action(detail=False,  methods=["DELETE"], permission_classes=[IsAuthenticated])
-    def event_delete(self, pk=None):
-        if pk:
-            print('EDIT')
-            info = json.loads(self.request.data.get('data'))
-            ser = CreateDragEventSerializer(data=self.request.data)
-            if ser.is_valid():
-                profile = ser.save(self.request.user, info)
-                return Response({'status':'success'})
 
 
     # @action(detail=False,  methods=["GET"], permission_classes=[IsAuthenticated])
@@ -286,6 +297,7 @@ class ListEventViewSet(viewsets.ModelViewSet):
                 # final_result= json.loads(json.dumps(result_serializer.data))
                 # print(len(final_result))
                 # print(self.paginate_queryset(history_result))
+                print(upcoming_result)
                 data= {
                     "status" : True,
                     "result" : self.paginate_queryset(upcoming_result),   

@@ -195,8 +195,8 @@ class DragProfile(models.Model):
 
 class FollowManager(models.Model):
     owner=models.OneToOneField(settings.AUTH_USER_MODEL,on_delete=models.CASCADE)
-    followers = models.ManyToManyField(settings.AUTH_USER_MODEL,related_name='user_followers', related_query_name='user_follower', editable=False, )
-    following = models.ManyToManyField(settings.AUTH_USER_MODEL, related_name='followed_users', related_query_name='followed_user', editable=False)
+    followers = models.ManyToManyField(settings.AUTH_USER_MODEL,related_name='user_followers', related_query_name='user_follower', )
+    following = models.ManyToManyField(settings.AUTH_USER_MODEL, related_name='followed_users', related_query_name='followed_user', )
 
     def count_followers(self):
         followers_count = len(
@@ -213,7 +213,7 @@ class FollowManager(models.Model):
 
     def __str__(self) -> str:
         return '{} has {} followers and is following {} performers'.format(
-            self.owner.username, self.count_followers(), self.count_following()
+            self.owner.username, self.count_followers()-1, self.count_following()-1
         )
 
 

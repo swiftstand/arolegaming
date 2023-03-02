@@ -18,9 +18,9 @@ from rest_framework import viewsets
 from django.utils.translation import gettext_lazy as _
 from rest_framework import parsers 
 from django.core.files.uploadedfile import SimpleUploadedFile
-from event.models import DragEvent
+from event.models import City, DragEvent
 from event.api.pagination import ProfilePagination
-from event.api.serializers import EventHostSerializer
+from event.api.serializers import CitySerializer, EventHostSerializer
 
 
 @api_view(['POST'])
@@ -79,10 +79,12 @@ def Register(request):
 
     return Response(data)
 
+
 @api_view(['POST'])
 def check_unique(request):
     data = {}
     argue = request.data['argue']
+    token = request.data['tok']
     if request.data['type'] == 'mail':
         is_dere = User.objects.filter(email = argue).exists()
         if is_dere:
@@ -98,8 +100,9 @@ def check_unique(request):
         is_dere = User.objects.filter(username = argue).exists()
         if is_dere:
             user = User.objects.get(username = argue)
-            print(len(argue))
-            if user.pk == request.user.pk and len(argue) >= 4:
+            d_token = Token.objects.get(user=user).key
+            print(user.pk, request.user.pk)
+            if d_token == token and len(argue) >= 4 :
                 data['valid'] = True
             else:
                 data['valid'] = False
@@ -293,8 +296,13 @@ class DragProfileViewSet(viewsets.ModelViewSet):
 
     @action(detail=False,  methods=['GET'], permission_classes=[IsAuthenticated])
     def check_created(self, serializer):
+        all_cities = City.objects.all()
+        city_serializer = CitySerializer(all_cities, many=True)
+        cities = json.loads(json.dumps(city_serializer.data))
+
         data = dict(
-            already = self.request.user.is_drag_performer
+            already = self.request.user.is_drag_performer,
+            cities = cities
         )
 
         return Response(data)
@@ -307,8 +315,11 @@ class DragProfileViewSet(viewsets.ModelViewSet):
         request_user = User.objects.get(id = self.request.user.id)
 
         if user_id:
-            manager = FollowManager.objects.filter(owner__id=user_id).values_list('followers',flat=True)
-            if request_user.pk in manager:
+            profile_user = User.objects.get(id = user_id)
+            # profile_user_followers = FollowManager.objects.get(owner=profile_user).followers.all()
+            request_user_followed = FollowManager.objects.get(owner=request_user).following.all()
+            print(request_user_followed)
+            if profile_user in request_user_followed:
                 followed =True
             else:
                 followed = False
@@ -326,19 +337,26 @@ class DragProfileViewSet(viewsets.ModelViewSet):
         user_id = self.request.GET.get('d', None)
         request_user = User.objects.get(id = self.request.user.id)
         if user_id:
-            value = self.request.GET.get('v')
-            manager = FollowManager.objects.get(owner__id=user_id)
-            if value == 'follow':
-                manager.followers.add(request_user)
-                manager.save()
-                followed = False
-                message = "you have unfollowed this profile successfully"
+            profile_user = User.objects.get(id = user_id)
+            profile_user_followers = FollowManager.objects.get(owner=profile_user)
+            request_user_followed = FollowManager.objects.get(owner=request_user)
 
-            else:
-                manager.followers.remove(request_user)
-                manager.save()
+            value = self.request.GET.get('v')
+            if value == 'follow':
+                request_user_followed.following.add(profile_user)
+                request_user_followed.save()
+                profile_user_followers.followers.add(request_user)
+                profile_user_followers.save()
                 followed = True
                 message = "You now follow this drag profile"
+
+            else:
+                request_user_followed.following.remove(profile_user)
+                request_user_followed.save()
+                profile_user_followers.followers.remove(request_user)
+                profile_user_followers.save()
+                followed = False
+                message = "you have unfollowed this profile successfully"
             
             data = dict(
                 status = True,
@@ -349,7 +367,7 @@ class DragProfileViewSet(viewsets.ModelViewSet):
             data = dict(
                 status = False
             )
-        print(data, user_id)
+        # print(data, user_id)
         return Response(data)
     
 
@@ -359,6 +377,7 @@ class DragProfileViewSet(viewsets.ModelViewSet):
         query= self.get_queryset()
         curr = self.request.GET.get('g', None)
         filterer = self.request.GET.get('f', None)
+        # token = self.request.GET.get('t', None)
         print(filterer)
         if filterer == 'null':
             profiles = list(query)
@@ -384,14 +403,20 @@ class DragProfileViewSet(viewsets.ModelViewSet):
                 if profile:
                     try:
                         new_manager = FollowManager.objects.create(owner=self.request.user)
+                        new_manager.followers.add(self.request.user)
+                        new_manager.following.add(self.request.user)
                         new_manager.save()
                     except:
                         non = "null"
                 return Response({'status':'success'})
 
         elif self.request.method == "GET":
+            all_cities = City.objects.all()
+            city_serializer = CitySerializer(all_cities, many=True)
+            cities = json.loads(json.dumps(city_serializer.data))
             try:
                 profile = DragProfile.objects.get(owner=self.request.user)
+                print(profile.city)
                 data = dict(
                     status=True,
                     username = self.request.user.username,
@@ -400,7 +425,8 @@ class DragProfileViewSet(viewsets.ModelViewSet):
                     city = profile.city,
                     availability = profile.availability,
                     socials = json.loads(profile.social_links),
-                    links = json.loads(profile.links)
+                    links = json.loads(profile.links),
+                    cities = cities
                 )
             except Exception as E:
                 data = {
