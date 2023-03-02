@@ -134,7 +134,7 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/3.0/howto/static-files/
 TEST = "https://drag4me.pythonanywhere.com"
-LOCAL =  "http://192.168.27.56:8000"
+LOCAL =  "http://192.168.158.56:8000"
 PROD = ""
 MY_SITE = TEST
 

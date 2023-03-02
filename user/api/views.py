@@ -9,7 +9,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.authtoken.models import Token
 from user.models import User, DragProfile, FollowManager
 from user.api.serializers import RegistrationSerializer,LoginSerializer, CreateDragProfileSerializer
-from random import choice
+from random import choice, shuffle
 from string import ascii_letters
 import itertools
 from django.conf import settings
@@ -19,6 +19,8 @@ from django.utils.translation import gettext_lazy as _
 from rest_framework import parsers 
 from django.core.files.uploadedfile import SimpleUploadedFile
 from event.models import DragEvent
+from event.api.pagination import ProfilePagination
+from event.api.serializers import EventHostSerializer
 
 
 @api_view(['POST'])
@@ -74,6 +76,38 @@ def Register(request):
     else:
         data = serializer.errors
         data['status']='fail'
+
+    return Response(data)
+
+@api_view(['POST'])
+def check_unique(request):
+    data = {}
+    argue = request.data['argue']
+    if request.data['type'] == 'mail':
+        is_dere = User.objects.filter(email = argue).exists()
+        if is_dere:
+            user = User.objects.get(email = argue)
+            if user.pk == request.user.pk:
+                data['valid'] = True
+            else:
+                data['valid'] = False
+        else:
+            data['valid'] = True
+
+    else:
+        is_dere = User.objects.filter(username = argue).exists()
+        if is_dere:
+            user = User.objects.get(username = argue)
+            print(len(argue))
+            if user.pk == request.user.pk and len(argue) >= 4:
+                data['valid'] = True
+            else:
+                data['valid'] = False
+        else:
+            if len(argue) >= 4:
+                data['valid'] = True
+            else:
+                data['valid'] = False
 
     return Response(data)
 
@@ -220,6 +254,7 @@ def prepare_drag_profile(request):
     return Response(data)
 
 
+
 @api_view(['GET'])
 @permission_classes([IsAuthenticated,])
 def drag_status(request):
@@ -246,9 +281,15 @@ def drag_status(request):
 class DragProfileViewSet(viewsets.ModelViewSet):
     queryset = DragProfile.objects.all()
     serializer_class = CreateDragProfileSerializer
+    pagination_class = ProfilePagination
     parser_classes = (parsers.MultiPartParser, parsers.FormParser,parsers.JSONParser)
-    permission_classes = [
-        permissions.IsAuthenticatedOrReadOnly]
+    # permission_classes = [
+    #     permissions.IsAuthenticatedOrReadOnly]
+
+    def get_queryset(self):
+        # profiles =  
+        return User.objects.all()
+
 
     @action(detail=False,  methods=['GET'], permission_classes=[IsAuthenticated])
     def check_created(self, serializer):
@@ -257,6 +298,81 @@ class DragProfileViewSet(viewsets.ModelViewSet):
         )
 
         return Response(data)
+    
+
+    @action(detail=False,  methods=['GET'], permission_classes=[IsAuthenticated])
+    def check_following(self, serializer):
+        data = {'status':False}
+        user_id = self.request.GET.get('d', None)
+        request_user = User.objects.get(id = self.request.user.id)
+
+        if user_id:
+            manager = FollowManager.objects.filter(owner__id=user_id).values_list('followers',flat=True)
+            if request_user.pk in manager:
+                followed =True
+            else:
+                followed = False
+
+            data = dict(
+                status = True,
+                followed = followed
+            )
+        return Response(data)
+
+
+    @action(detail=False,  methods=['GET'], permission_classes=[IsAuthenticated])
+    def handle_follow(self, serializer):
+        data = {}
+        user_id = self.request.GET.get('d', None)
+        request_user = User.objects.get(id = self.request.user.id)
+        if user_id:
+            value = self.request.GET.get('v')
+            manager = FollowManager.objects.get(owner__id=user_id)
+            if value == 'follow':
+                manager.followers.add(request_user)
+                manager.save()
+                followed = False
+                message = "you have unfollowed this profile successfully"
+
+            else:
+                manager.followers.remove(request_user)
+                manager.save()
+                followed = True
+                message = "You now follow this drag profile"
+            
+            data = dict(
+                status = True,
+                message = message,
+                followed = followed
+            )
+        else:
+            data = dict(
+                status = False
+            )
+        print(data, user_id)
+        return Response(data)
+    
+
+    @action(detail=False,  methods=['GET'])
+    def all_profile(self, serializer):
+        data= {}
+        query= self.get_queryset()
+        curr = self.request.GET.get('g', None)
+        filterer = self.request.GET.get('f', None)
+        print(filterer)
+        if filterer == 'null':
+            profiles = list(query)
+            print(profiles)
+            profile_serilizer = EventHostSerializer(profiles,many=True)
+            profile_result = json.loads(json.dumps(profile_serilizer.data))
+            print(profile_result)
+            data= {
+                "status" : True,
+                "result" : self.paginate_queryset(profile_result),
+            }
+        
+        return Response(data)
+
 
     @action(detail=False,  methods=['POST', 'GET', 'PUT'], permission_classes=[IsAuthenticated])
     def perform_create(self, serializer):

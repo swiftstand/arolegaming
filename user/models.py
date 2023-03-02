@@ -171,15 +171,15 @@ class DragProfile(models.Model):
     approved=models.BooleanField(default=False)
     locked=models.BooleanField(default=False)
     availability = models.BooleanField(default=True)
-    website_url = models.CharField(max_length=1000, null=True)
-    tip_url = models.CharField(max_length=1000, null=True)
+    website_url = models.CharField(max_length=1000, null=True, blank=True)
+    tip_url = models.CharField(max_length=1000, null=True, blank=True)
     city=models.TextField(null=False, blank=False,default='input address', editable=False)
-    instagram = models.CharField(max_length=1000, null=True)
-    tiktok = models.CharField(max_length=1000, null=True)
-    twitter = models.CharField(max_length=1000, null=True)
-    youtube = models.CharField(max_length=1000, null=True)
-    facebook = models.CharField(max_length=1000, null=True)
-    mail = models.CharField(max_length=1000, null=True)
+    instagram = models.CharField(max_length=1000, null=True, blank=True)
+    tiktok = models.CharField(max_length=1000, null=True, blank=True)
+    twitter = models.CharField(max_length=1000, null=True, blank=True)
+    youtube = models.CharField(max_length=1000, null=True, blank=True)
+    facebook = models.CharField(max_length=1000, null=True, blank=True)
+    mail = models.CharField(max_length=1000, null=True, blank=True)
     
     
     """ To change to JsonField in production """

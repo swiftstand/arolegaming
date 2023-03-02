@@ -27,3 +27,13 @@ class DragEvent(models.Model):
 
     def __str__(self) -> str:
         return '{} hosted by @{}'.format(self.title, self.performer.username)
+    
+
+class City(models.Model):
+    name = models.CharField(max_length=500, null=True)
+    key = models.IntegerField(null=True, editable=False)
+    abbr = models.CharField(max_length=100, null=True)
+
+    def __str__(self):
+        return 'city of {} USA'.format(self.name)
+    

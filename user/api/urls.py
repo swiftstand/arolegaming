@@ -8,6 +8,7 @@ urlpatterns = [
     path('register/', user_api_views.Register, name="register"),
     path('logout/', user_api_views.Logout, name="logout"),
     path('login/', user_api_views.login, name="login"),
+    path('check/', user_api_views.check_unique, name="check"),
     path('password/reset/', user_api_views.forgotpassword, name='forgot'),
     path('password/confirm/', user_api_views.confirm_reset, name='confirm'),
     path('sets/', include(router.urls)),

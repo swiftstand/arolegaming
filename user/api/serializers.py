@@ -109,8 +109,8 @@ class CreateDragProfileSerializer(serializers.ModelSerializer):
         profile.availability = profile_info.get('availability')
         links = profile_info.get('links')
         profile.links = json.dumps(links)
-        profile.website_url = links[0]['link']
-        profile.tip_url = links[1]['link']
+        profile.website_url = links[1]['link']
+        profile.tip_url = links[0]['link']
         # encoded_json = json.dumps(profile_info.get('socials'))    
         profile.social_links = json.dumps(profile_info.get('socials'))
         profile.city = profile_info.get('city')
@@ -141,8 +141,8 @@ class CreateDragProfileSerializer(serializers.ModelSerializer):
         print(profile_info.get('links'))
         links = profile_info.get('links')
         profile.links = json.dumps(links)
-        profile.website_url = links[0]['link']
-        profile.tip_url = links[1]['link']
+        profile.website_url = links[1]['link']
+        profile.tip_url = links[0]['link']
         # encoded_json = json.dumps(profile_info.get('socials'))    
         profile.social_links = json.dumps(profile_info.get('socials'))
         profile.city = profile_info.get('city')
@@ -168,3 +168,5 @@ class MyModelSerializer(serializers.ModelSerializer):
     creator = serializers.ReadOnlyField(source='creator.username')
     creator_id = serializers.ReadOnlyField(source='creator.id')
     image_url = serializers.ImageField(required=False)
+
+
