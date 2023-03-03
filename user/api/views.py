@@ -103,13 +103,20 @@ def check_unique(request):
             d_token = Token.objects.get(user=user).key
             print(user.pk, request.user.pk)
             if d_token == token and len(argue) >= 4 :
+                data['msg'] = None
                 data['valid'] = True
+            elif len(argue)<4:
+                data['msg'] = "stage name should be 4 or more characters"
+                data['valid'] = False
             else:
+                data['msg'] = "A user with that stage name already exists"
                 data['valid'] = False
         else:
             if len(argue) >= 4:
+                data['msg'] = None
                 data['valid'] = True
             else:
+                data['msg'] = "stage name should be 4 or more characters"
                 data['valid'] = False
 
     return Response(data)
