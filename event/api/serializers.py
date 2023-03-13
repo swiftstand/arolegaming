@@ -5,6 +5,7 @@ import json
 from event.models import DragEvent, City
 from user.models import User
 from django.conf import settings
+from .utils import do_number
 
 
 
@@ -149,9 +150,36 @@ class EventHostSerializer(serializers.ModelSerializer):
 
 class CitySerializer(serializers.ModelSerializer):
     value = serializers.SerializerMethodField()
+    performer_count = serializers.SerializerMethodField()
+    events_hosted_count = serializers.SerializerMethodField()
+    upcoming_events_count = serializers.SerializerMethodField()
 
     def get_value(self, obj):
         return obj.name
+    
+    def get_performer_count(self, obj):
+        count = DragProfile.objects.filter(city = obj.name).count() 
+        return do_number(count)
+    
+    def get_events_hosted_count(self, obj):
+        current_time = self.context['request'].GET.get('c')
+        if current_time:
+            query = DragEvent.objects.filter(city = obj.name)
+            count = query.filter(raw_date__lt=current_time).count() 
+            return do_number(count)
+        else:
+            return 0
+    
+    def get_upcoming_events_count(self, obj):
+        current_time = self.context['request'].GET.get('c')
+        if current_time:
+            query = DragEvent.objects.filter(city = obj.name)
+            count = query.filter(raw_date__gte=current_time).count()
+            return do_number(count)
+        else:
+            return 0
+    
+
     class Meta:
         model = City
-        fields = ('key', 'value')
+        fields = ('key', 'value', 'events_hosted_count', 'upcoming_events_count', 'performer_count')

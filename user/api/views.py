@@ -18,9 +18,10 @@ from rest_framework import viewsets
 from django.utils.translation import gettext_lazy as _
 from rest_framework import parsers 
 from django.core.files.uploadedfile import SimpleUploadedFile
-from event.models import City, DragEvent
+from event.models import City, DragEvent, Bookmark
 from event.api.pagination import ProfilePagination
 from event.api.serializers import CitySerializer, EventHostSerializer
+from django.db import models
 
 
 @api_view(['POST'])
@@ -29,6 +30,19 @@ def login(request):
     props = request.data
     try:
         user_obj = User.objects.get(email = request.data['email'])
+        # create bookmarker
+        user_bookmark = Bookmark.objects.filter(owner=user_obj).exists()
+        if user_bookmark == False:
+            new_bookmark = Bookmark.objects.create(owner = user_obj)
+
+        user_follow_manager = FollowManager.objects.filter(owner=user_obj).exists()
+        if user_follow_manager == False:
+            # create manager
+            new_manager = FollowManager.objects.create(owner=user_obj)
+            new_manager.followers.add(user_obj)
+            new_manager.following.add(user_obj)
+            new_manager.save()
+
         props['username'] = user_obj.username
     except User.DoesNotExist:
         msg = _('Email or password is incorrect.')
@@ -65,9 +79,16 @@ def Register(request):
     serializer = RegistrationSerializer(data=request.data)
     if serializer.is_valid(raise_exception=True):
         user=serializer.save()
+        # create bookmarker
+        user_bookmark = Bookmark.objects.create(owner=user)
+        # create manager
+        new_manager = FollowManager.objects.create(owner=user)
+        new_manager.followers.add(user)
+        new_manager.following.add(user)
+        new_manager.save()
+
         token, created = Token.objects.get_or_create(user=user)
         data['satus']= 'success'
-        # data['image']  = user.image
         data['token']= token.key
         data['email']= user.email
         data['fullname']= user.fullname
@@ -236,29 +257,43 @@ class MultipartJsonParser(parsers.MultiPartParser):
 @permission_classes([IsAuthenticated,])
 def prepare_drag_profile(request):
     user = request.user
-    profile = DragProfile.objects.get(owner=user)
     follower = FollowManager.objects.get(owner=user)
 
     number_of_followers = follower.count_followers()
 
     following = follower.count_following()
-    print(number_of_followers, following)
 
-    data = dict(
-        status=True,
-        username = user.username,
-        fullname = user.fullname,
-        image = settings.MY_SITE+profile.image.url,
-        about_me = profile.about_me,
-        city = profile.city,
-        availability = profile.availability,
-        socials = json.loads(profile.social_links),
-        website_url = profile.website_url,
-        tip_url = profile.tip_url,
-        followers = number_of_followers-1,
-        following = following-1,
-        events = DragEvent.objects.filter(performer=user).count()
-    )
+    try:
+        profile = DragProfile.objects.get(owner=user)
+
+        data = dict(
+            status=True,
+            username = user.username,
+            fullname = user.fullname,
+            image = settings.MY_SITE+profile.image.url,
+            about_me = profile.about_me,
+            city = profile.city,
+            availability = profile.availability,
+            socials = json.loads(profile.social_links),
+            website_url = profile.website_url,
+            tip_url = profile.tip_url,
+            followers = number_of_followers-1,
+            following = following-1,
+            events = DragEvent.objects.filter(performer=user).count(),
+            bookmarks = Bookmark.objects.get(owner=user).bookmarked_events.all().count()
+        )
+    except:
+        followed_dragevents = ''
+        events = DragEvent.objects.filter(performer__in = follower.following.all())
+        data = dict(
+            status=True,
+            username = user.username,
+            fullname = user.fullname,
+            followers = number_of_followers-1,
+            following = following-1,
+            bookmarks = Bookmark.objects.get(owner=user).bookmarked_events.all().count(),
+            followed_events = events.count()
+        )
     print("succes : ", data)   
     
     return Response(data)
@@ -298,13 +333,13 @@ class DragProfileViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         # profiles =  
-        return User.objects.all()
+        return User.objects.filter(is_drag_performer=True)
 
 
     @action(detail=False,  methods=['GET'], permission_classes=[IsAuthenticated])
     def check_created(self, serializer):
         all_cities = City.objects.all()
-        city_serializer = CitySerializer(all_cities, many=True)
+        city_serializer = CitySerializer(all_cities, many=True, context={'request': self.request})
         cities = json.loads(json.dumps(city_serializer.data))
 
         data = dict(
@@ -347,6 +382,7 @@ class DragProfileViewSet(viewsets.ModelViewSet):
             profile_user = User.objects.get(id = user_id)
             profile_user_followers = FollowManager.objects.get(owner=profile_user)
             request_user_followed = FollowManager.objects.get(owner=request_user)
+            print("REQU : FOLL ",request_user_followed)
 
             value = self.request.GET.get('v')
             if value == 'follow':
@@ -376,6 +412,18 @@ class DragProfileViewSet(viewsets.ModelViewSet):
             )
         # print(data, user_id)
         return Response(data)
+
+
+    def filter_followed(self, user_follow_manager:FollowManager):
+        followed_profiles = user_follow_manager.following.all().values_list('pk', flat=True)
+        return followed_profiles
+    
+    def filter_by_city(self, city_name):
+        print(city_name)
+        city_profile = DragProfile.objects.filter(city = city_name)
+        city_profiles = DragProfile.objects.filter(city = city_name).values_list('owner__pk', flat=True)
+        print("CITYYY : ", city_profile)
+        return city_profiles
     
 
     @action(detail=False,  methods=['GET'])
@@ -384,21 +432,50 @@ class DragProfileViewSet(viewsets.ModelViewSet):
         query= self.get_queryset()
         curr = self.request.GET.get('g', None)
         filterer = self.request.GET.get('f', None)
-        # token = self.request.GET.get('t', None)
-        print(filterer)
-        if filterer == 'null':
+        owner = self.request.GET.get('t', None)
+        print(filterer, owner)
+        if owner:
+            try:
+                request_user = User.objects.get(email=owner)
+                user_follow_manager = FollowManager.objects.get(owner=request_user)
+                if filterer=='followed_people':
+                    user_followed = self.filter_followed(user_follow_manager)
+                    query = query.filter(pk__in = user_followed).exclude(pk = request_user.pk)
+                
+                elif filterer and 'city' in filterer.split('-'):
+                    city_profiles = self.filter_by_city(filterer.split('-')[-1])
+                    query = query.filter(pk__in =  city_profiles)
+                profiles = list(query)
+                # print(profiles)
+                profile_serilizer = EventHostSerializer(profiles,many=True)
+                profile_result = json.loads(json.dumps(profile_serilizer.data))
+
+            except Exception as e:
+                print(e)
+
+                data = dict(
+                    status = False,
+                )
+                return Response(data)
+            
+            
+        else :
+            if filterer and 'city' in filterer.split('-'):
+                city_profiles = self.filter_by_city(filterer.split('-')[-1])
+                query = query.filter(pk__in =  city_profiles)
             profiles = list(query)
-            print(profiles)
             profile_serilizer = EventHostSerializer(profiles,many=True)
             profile_result = json.loads(json.dumps(profile_serilizer.data))
-            print(profile_result)
-            data= {
+
+        final_result = self.paginate_queryset(profile_result)
+
+        shuffle(final_result)
+        data= {
                 "status" : True,
-                "result" : self.paginate_queryset(profile_result),
+                "result" : final_result,
             }
         
         return Response(data)
-
 
     @action(detail=False,  methods=['POST', 'GET', 'PUT'], permission_classes=[IsAuthenticated])
     def perform_create(self, serializer):
@@ -407,19 +484,11 @@ class DragProfileViewSet(viewsets.ModelViewSet):
             ser = CreateDragProfileSerializer(data=self.request.data)
             if ser.is_valid():
                 profile = ser.save(self.request.user, profile_info)
-                if profile:
-                    try:
-                        new_manager = FollowManager.objects.create(owner=self.request.user)
-                        new_manager.followers.add(self.request.user)
-                        new_manager.following.add(self.request.user)
-                        new_manager.save()
-                    except:
-                        non = "null"
                 return Response({'status':'success'})
 
         elif self.request.method == "GET":
             all_cities = City.objects.all()
-            city_serializer = CitySerializer(all_cities, many=True)
+            city_serializer = CitySerializer(all_cities, many=True, context={'request': self.request})
             cities = json.loads(json.dumps(city_serializer.data))
             try:
                 profile = DragProfile.objects.get(owner=self.request.user)

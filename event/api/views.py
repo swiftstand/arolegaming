@@ -6,8 +6,8 @@ from rest_framework.response import Response
 from rest_framework.decorators import api_view, permission_classes, parser_classes, action
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.authtoken.models import Token
-from event.models import DragEvent, City
-from user.models import User,DragProfile
+from event.models import DragEvent, City, Bookmark
+from user.models import FollowManager, User,DragProfile
 from event.api.serializers import CreateDragEventSerializer, SerializeAllEvents, EventHostSerializer, CitySerializer
 from random import choice
 from string import ascii_letters
@@ -46,7 +46,7 @@ class DragEventViewSet(viewsets.ModelViewSet):
     @action(detail=False,  methods=["GET"])
     def all_cities(self, pk=None):
         cities = City.objects.all()
-        serialized_cities = CitySerializer(cities, many =True)
+        serialized_cities = CitySerializer(cities, many =True, context={'request': self.request})
 
         result = json.loads(json.dumps(serialized_cities.data))
         data = dict(
@@ -70,6 +70,7 @@ class DragEventViewSet(viewsets.ModelViewSet):
             result = self.paginate_queryset(general_hosts),
             status = "success",
         )
+        print("HOSTS : ",general_hosts)
         return Response(data)
 
 
@@ -78,7 +79,7 @@ class DragEventViewSet(viewsets.ModelViewSet):
         if self.request.method == "GET":
             event_pk = self.request.GET.get('q', None)
             all_cities = City.objects.all()
-            city_serializer = CitySerializer(all_cities, many=True)
+            city_serializer = CitySerializer(all_cities, many=True, context={'request': self.request})
             cities = json.loads(json.dumps(city_serializer.data))
             if int(event_pk) > 0:
                 event= DragEvent.objects.get(pk = event_pk)
@@ -90,7 +91,6 @@ class DragEventViewSet(viewsets.ModelViewSet):
                 event_obj = json.loads(json.dumps(event_serializer.data))
 
                 
-                print("CITIES\n", cities)
                 data = dict(
                     hosts = result,
                     status = "success",
@@ -196,28 +196,6 @@ class DragEventViewSet(viewsets.ModelViewSet):
         return Response(data)
 
 
-    # @action(detail=False,  methods=["GET"], permission_classes=[IsAuthenticated])
-    # def profile_event(self,):
-    #         username = json.loads(self.request.data.get('user'))
-    #         events = DragEvent.objects.filter(performer=username)
-            
-
-    #         event_list = []
-    #         for event in events:
-    #             event_dict = dict(
-    #                    banner = settings.MY_SITE + event.banner.url,
-    #                    title = event.title,
-    #                    detail = event.details,
-    #                    venue = event.venue,
-    #                    website = event.website,
-    #                    direction = event.direction,
-    #                    performer = [event.performer.username, event.performer.fullname],
-    #                    city = event.city 
-    #             )
-
-    #             event_list.append(event_dict)
-    #         return Response({'status':'success'})
-
 
 class ListEventViewSet(viewsets.ModelViewSet):
     pagination_class = CustomPagination
@@ -231,6 +209,62 @@ class ListEventViewSet(viewsets.ModelViewSet):
         return DragEvent.objects.all().order_by('-date_uploaded')
         # return event_query
 
+    @action(detail=False,  methods=["GET"], permission_classes=[IsAuthenticated])
+    def bookmark_status(self, serializer):
+        event_id = self.request.GET.get('g', None)
+        book_list_events = list(Bookmark.objects.filter(owner= self.request.user).values_list('bookmarked_events', flat=True))
+        print(book_list_events, event_id)
+        if event_id:
+            if int(event_id) in book_list_events:
+                marked = True
+            else:
+                marked = False
+
+            data = {
+                "status" : True,
+                "marked" : marked
+            }
+
+            return Response(data)
+        
+        else:
+            # return all events in bookmark list
+            bookmarked_events = DragEvent.objects.filter(pk__in = book_list_events)
+            event_serializer = SerializeAllEvents(bookmarked_events, many=True)
+            event_result = json.loads(json.dumps(event_serializer.data))
+
+            data= {
+                "status" : True,
+                "result" : self.paginate_queryset(event_result),
+            }
+
+            return Response(data)
+
+    @action(detail=False,  methods=["POST"], permission_classes=[IsAuthenticated])
+    def handle_bookmark(self, serializer):
+        print(type(self.request.data), self.request.data)
+        body = self.request.data
+        event_id = body['id']
+        user = self.request.user
+        value = body['val']
+        user_bookmark = Bookmark.objects.get(owner = user)
+        event = DragEvent.objects.get(pk = event_id)
+        if value:
+            user_bookmark.bookmarked_events.add(event)
+            data = {
+                "status" : True,
+                "marked" : True
+            }
+        else:
+            user_bookmark.bookmarked_events.remove(event)
+            data = {
+                "status" : True,
+                "marked" : False,
+            }
+        user_bookmark.save()
+
+
+        return Response(data)
 
     @action(detail=False,  methods=["GET"])
     def every_event(self, serializer):
@@ -246,64 +280,54 @@ class ListEventViewSet(viewsets.ModelViewSet):
             }
         
         return Response(data)
+    
+    def filter_follow_events(self, request_user_pk, filterer):
 
-    @action(detail=False,  methods=["GET"], permission_classes=[IsAuthenticated])
+        request_user = User.objects.get(id = request_user_pk)
+
+        request_user_followed = FollowManager.objects.get(owner=request_user).following.all()
+        drag_events = DragEvent.objects.filter(performer__in = request_user_followed)
+
+        return drag_events
+
+
+
+    @action(detail=False,  methods=["GET"])
     def history_profile(self, serializer):
-        query = self.get_queryset()
+        query = self.get_queryset().order_by('raw_date')
         owner = self.request.GET.get('q', None)
         curr = self.request.GET.get('g', None)
-
+        filterer = self.request.GET.get('f', None)
         if owner:
             try:
                 user = User.objects.get(email=owner)
-                history_query = query.filter(performer=user).filter(raw_date__lt=curr)
-                history_serializer = self.serializer_class(history_query,many=True)
-                history_result= json.loads(json.dumps(history_serializer.data))
+                if filterer=='followed_events':
+                    query = self.filter_follow_events(user.pk, filterer)
+                elif filterer == 'bookmark':
+                    query = self.filter_bookmark(user, filterer)
+                elif 'city' in filterer.split('-'):
+                    query = self.filter_by_city(filterer.split('-')[-1])
+                else:
+                    query = query.filter(performer=user)
+                if DragProfile.objects.filter(owner=user).exists() and DragProfile.objects.get(owner=user).approved:
+                    history_query = query.filter(raw_date__lt=curr)
+                    history_serializer = self.serializer_class(history_query,many=True)
+                    history_result= json.loads(json.dumps(history_serializer.data))
+                    data= {
+                        "status" : True,
+                        "result" : self.paginate_queryset(history_result),   
 
-                data= {
-                    "status" : True,
-                    "result" : self.paginate_queryset(history_result),
-                    # "upcoming_event" :  [],
-                }
-            except Exception as e:
-                print(e)
-
-                data = dict(
-                    status = False,
-                )
-            return Response(data)
-
-    @action(detail=False,  methods=["GET"], permission_classes=[IsAuthenticated])
-    def profile_event(self, serializer):
-        query = self.get_queryset()
-        owner = self.request.GET.get('q', None)
-        curr = self.request.GET.get('g', None)
-        print(curr)
-        if owner:
-            try:
-                user = User.objects.get(email=owner)
-                upcoming_query = query.filter(performer=user).filter(raw_date__gte=curr)
-                upcoming_serializer = self.serializer_class(upcoming_query,many=True)
-                upcoming_result= json.loads(json.dumps(upcoming_serializer.data))
-                # for iq in query:
-                #     print('\t',iq.raw_date, '\t', int(curr))
-
-                # history_query = query.filter(performer=user).filter(raw_date__lt=curr)
-                # history_serializer = self.serializer_class(history_query,many=True)
-                # history_result= json.loads(json.dumps(history_serializer.data))
-
-                # result_query = query.filter(performer=user)
-                # result_serializer = self.serializer_class(result_query,many=True)
-                # final_result= json.loads(json.dumps(result_serializer.data))
-                # print(len(final_result))
-                # print(self.paginate_queryset(history_result))
-                print(upcoming_result)
-                data= {
-                    "status" : True,
-                    "result" : self.paginate_queryset(upcoming_result),   
-                    # "upcoming_event" :  [],
-                    # "result" : self.paginate_queryset(final_result)
-                }
+                    }
+                else:
+                    if filterer and 'city' in filterer.split('-'):
+                        query = self.filter_by_city(filterer.split('-')[-1])
+                    history_query = query.filter(raw_date__lt=curr).order_by('-raw_date')
+                    history_serializer = self.serializer_class(history_query,many=True)
+                    history_result= json.loads(json.dumps(history_serializer.data))
+                    data= {
+                        "status" : True,
+                        "result" : self.paginate_queryset(history_result)
+                    }
                 
 
             except Exception as e:
@@ -312,6 +336,93 @@ class ListEventViewSet(viewsets.ModelViewSet):
                 data = dict(
                     status = False,
                 )
+            return Response(data)
+
+        else:
+            if filterer and 'city' in filterer.split('-'):
+                query = self.filter_by_city(filterer.split('-')[-1])
+            history_query = query.filter(raw_date__lt=curr).order_by('-raw_date')
+            history_serializer = self.serializer_class(history_query,many=True)
+            history_result= json.loads(json.dumps(history_serializer.data))
+            data= {
+                "status" : True,
+                "result" : self.paginate_queryset(history_result)
+            }
+
+            return Response(data)
+        
+    def filter_bookmark(self,d_user, filterer):
+        user_bookmark = Bookmark.objects.get(owner=d_user)
+        drag_events = user_bookmark.bookmarked_events.all()
+
+        return drag_events
+    
+    def filter_by_city(self, city_name):
+        drag_events = DragEvent.objects.filter(city = city_name) 
+
+        return drag_events
+    
+
+
+    @action(detail=False,  methods=["GET"])
+    def profile_event(self, serializer):
+        query = self.get_queryset()
+        owner = self.request.GET.get('q', None)
+        curr = self.request.GET.get('g', None)
+        filterer = self.request.GET.get('f', None)
+        
+        if owner:
+            try:
+                user = User.objects.get(email=owner)
+                if filterer=='followed_events':
+                    query = self.filter_follow_events(user.pk, filterer)
+                elif filterer == 'bookmark':
+                    query = self.filter_bookmark(user, filterer)
+                elif filterer and 'city' in filterer.split('-'):
+                    query = self.filter_by_city(filterer.split('-')[-1])
+                else:
+                    query = query.filter(performer=user)
+                if DragProfile.objects.filter(owner=user).exists() and DragProfile.objects.get(owner=user).approved:
+                    upcoming_query = query.filter(raw_date__gte=curr).order_by('raw_date')
+                    upcoming_serializer = self.serializer_class(upcoming_query,many=True)
+                    upcoming_result= json.loads(json.dumps(upcoming_serializer.data))
+                    data= {
+                        "status" : True,
+                        "result" : self.paginate_queryset(upcoming_result),   
+
+                    }
+                else:
+                    if filterer and 'city' in filterer.split('-'):
+                        query = self.filter_by_city(filterer.split('-')[-1])
+                    upcoming_query = query.filter(raw_date__gte=curr).order_by('raw_date')
+                    upcoming_serializer = self.serializer_class(upcoming_query,many=True)
+                    upcoming_result= json.loads(json.dumps(upcoming_serializer.data))
+                    data= {
+                        "status" : True,
+                        "result" : self.paginate_queryset(upcoming_result)
+                    }
+                
+                print(data)
+
+            except Exception as e:
+                print(e)
+
+                data = dict(
+                    status = False,
+                )
+            return Response(data)
+
+        else:
+            if filterer and 'city' in filterer.split('-'):
+                query = self.filter_by_city(filterer.split('-')[-1])
+            upcoming_query = query.filter(raw_date__gte=curr)
+            upcoming_serializer = self.serializer_class(upcoming_query,many=True)
+            upcoming_result= json.loads(json.dumps(upcoming_serializer.data))
+            data= {
+                "status" : True,
+                "result" : self.paginate_queryset(upcoming_result)
+            }
+
             return Response(data)
         
     

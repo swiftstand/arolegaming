@@ -37,3 +37,14 @@ class City(models.Model):
     def __str__(self):
         return 'city of {} USA'.format(self.name)
     
+    class Meta:
+        verbose_name_plural = 'Cities'
+    
+
+
+class Bookmark(models.Model):
+    owner = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    bookmarked_events = models.ManyToManyField(DragEvent)
+
+    def __str__(self) -> str:
+        return 'Events bookmarked by {}'.format(self.owner.email)
