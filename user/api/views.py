@@ -262,7 +262,7 @@ def prepare_drag_profile(request):
     number_of_followers = follower.count_followers()
 
     following = follower.count_following()
-
+    d_events = DragEvent.objects.filter(performer__in = follower.following.all())
     try:
         profile = DragProfile.objects.get(owner=user)
 
@@ -280,11 +280,11 @@ def prepare_drag_profile(request):
             followers = number_of_followers-1,
             following = following-1,
             events = DragEvent.objects.filter(performer=user).count(),
-            bookmarks = Bookmark.objects.get(owner=user).bookmarked_events.all().count()
+            bookmarks = Bookmark.objects.get(owner=user).bookmarked_events.all().count(),
+            followed_events = d_events.count()
         )
     except:
-        followed_dragevents = ''
-        events = DragEvent.objects.filter(performer__in = follower.following.all())
+        
         data = dict(
             status=True,
             username = user.username,
@@ -292,7 +292,7 @@ def prepare_drag_profile(request):
             followers = number_of_followers-1,
             following = following-1,
             bookmarks = Bookmark.objects.get(owner=user).bookmarked_events.all().count(),
-            followed_events = events.count()
+            followed_events = d_events.count()
         )
     print("succes : ", data)   
     
