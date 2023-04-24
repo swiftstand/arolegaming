@@ -122,21 +122,23 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = 'en-us'
 
-TIME_ZONE = 'UTC'
+# TIME_ZONE = 'UTC'
+
+TIME_ZONE = 'Africa/Lagos'
 
 USE_I18N = True
 
 USE_L10N = True
 
-USE_TZ = True
+# USE_TZ = True
 
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/3.0/howto/static-files/
 TEST = "https://drag4me.pythonanywhere.com"
-LOCAL =  "http://192.168.230.56:8000"
+LOCAL =  "http://192.168.12.56:8000"
 PROD = ""
-MY_SITE = TEST
+MY_SITE = LOCAL
 
 LOGIN_REDIRECT_URL= 'index'
 LOGIN_URL = 'login'

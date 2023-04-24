@@ -7,8 +7,9 @@ from random import choice
 from string import ascii_letters
 import  itertools
 from  django.utils import  timezone
+from datetime import datetime
 from  PIL import Image
-import datetime
+from datetime import datetime
 # Create your models here.
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager
 from django.utils import timezone
@@ -72,6 +73,9 @@ class User(AbstractBaseUser):
     resetter=models.CharField(null=True, editable=False, max_length=100)
     """ To change to JsonField in production """
     settings = models.CharField(max_length=1000, editable=False, null=True)
+    qr_id = models.CharField(max_length=1000, null=True)
+    pay_code = models.IntegerField(editable=False, default=1234, null=True, blank=True)
+    balance = models.DecimalField(decimal_places=2, max_digits=100, default=0.00, editable=False)
 
 
     USERNAME_FIELD = 'email'
@@ -180,17 +184,48 @@ class DragProfile(models.Model):
     youtube = models.CharField(max_length=1000, null=True, blank=True)
     facebook = models.CharField(max_length=1000, null=True, blank=True)
     mail = models.CharField(max_length=1000, null=True, blank=True)
+    branch_code = models.CharField(max_length=12, null=True, default="0")
+    branch_name = models.CharField(max_length=1000, null=True, default="Oye Ekiti")
+    branch_location = models.CharField(max_length=1000, null=True)
     
-    
+
     """ To change to JsonField in production """
     social_links = models.CharField(max_length=1000, null=True, editable=False)
     links = models.CharField(max_length=1000, null=True, editable=False)
 
+    def generate_code():
+        size = random.randint(10, 15)
+        result = ''.join(random.choices("123456789", k=size))
+        for  i in itertools.count(1):
+            if result not in User.objects.filter(qr_id=result).values_list('qr_id',flat=True):
+                break
+            generate_code()
+        return result
+
+    def save(self):
+        if self.branch_code == "0" or not self.pk:
+            self.branch_code = self.generate_code()
+        
+        super().save()
+
+
     def __str__(self):
         return 'performer profile'.format(self.owner.username)
 
-    # def count_events(self):
-    #     return DragEvent.objects.filter(performer=self.owner).count()
+class Transaction(models.Model):
+    payer = models.ForeignKey(settings.AUTH_USER_MODEL, null=True,on_delete=models.SET_NULL)
+    branch = models.ForeignKey(DragProfile, null=True,on_delete= models.SET_NULL)
+    amount = models.DecimalField(decimal_places=2, max_digits=100)
+    branch_name = models.CharField(max_length=1000, null= True)
+    branch_location = models.CharField(max_length=1000, null=True)
+    description = models.CharField(max_length=200, null=True)
+    date_uploaded = models.DateTimeField(verbose_name='date made', default=datetime.now())
+    reference= models.CharField(max_length=1000, null=True)
+    is_branch = models.BooleanField(default=False)
+    add = models.BooleanField(default=False)
+    
+
+
 
 
 class FollowManager(models.Model):

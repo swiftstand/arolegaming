@@ -242,7 +242,6 @@ class ListEventViewSet(viewsets.ModelViewSet):
 
     @action(detail=False,  methods=["POST"], permission_classes=[IsAuthenticated])
     def handle_bookmark(self, serializer):
-        print(type(self.request.data), self.request.data)
         body = self.request.data
         event_id = body['id']
         user = self.request.user

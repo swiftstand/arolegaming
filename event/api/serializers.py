@@ -1,11 +1,12 @@
 from rest_framework import serializers
-from user.models import DragProfile, FollowManager
+from user.models import DragProfile, FollowManager, Transaction
 from django.utils.translation import gettext_lazy as _
 import json
 from event.models import DragEvent, City
 from user.models import User
 from django.conf import settings
 from .utils import do_number
+from datetime import datetime as dt
 
 
 
@@ -147,6 +148,70 @@ class EventHostSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ('id','username', 'email','tip_url', 'website_url','about_me','availability','fullname', 'city', 'image', 'followers', 'following', 'event', 'socials')
+
+
+class TransactionSerializer(serializers.ModelSerializer):
+    date = serializers.SerializerMethodField()
+    time = serializers.SerializerMethodField()
+    payer_name = serializers.SerializerMethodField()
+    branch_name = serializers.SerializerMethodField()
+    amount = serializers.SerializerMethodField()
+    add = serializers.SerializerMethodField()
+
+    def get_date(self, obj):
+        return str(obj.date_uploaded.date())
+    
+    def get_time(self, obj):
+        time = obj.date_uploaded.time()
+        if time.hour > 0 and time.hour < 12:
+            comp = " am"
+        else:
+            comp = " pm"
+        minit = str(time.minute)
+        hrs = str(time.hour)
+        if time.minute < 10:
+            minit="0"+minit
+        if time.hour < 10:
+            hrs = "0"+hrs
+
+        return '' + hrs + ":" + minit +comp
+
+
+    def get_payer_name(self, obj):
+        if obj.is_branch:
+            return obj.payer.fullname
+        else:
+            return "Paystack Gateway"
+
+    def get_branch_name(self, obj):
+        if obj.is_branch and obj.branch:
+            return obj.branch.branch_name
+        else:
+            return "SELF FUNDING"
+    
+    def get_amount(self, obj):
+        ref_am = str(float(obj.amount))
+        div_am = ref_am.split(".")
+        if len(div_am[1])<2:
+            ref_am+='0'
+        if obj.add:
+            if obj.is_branch:
+                return "-₦"+ref_am
+            return "+₦"+ref_am
+        else:
+            if obj.is_branch:
+                return "+₦"+ref_am
+            return "-₦"+ref_am
+
+    def get_add(self, obj):
+        if obj.is_branch:
+            return not obj.add
+        else:
+            return obj.add
+    
+    class Meta:
+        model = Transaction
+        fields = ("id","amount", "time", "date", "payer_name", "branch_name", "add")
 
 class CitySerializer(serializers.ModelSerializer):
     value = serializers.SerializerMethodField()

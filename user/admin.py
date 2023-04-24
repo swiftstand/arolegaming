@@ -1,5 +1,5 @@
 from django.contrib import admin
-from user.models import User, DragProfile, FollowManager
+from user.models import User, DragProfile, FollowManager, Transaction
 from django.urls import reverse
 from django.utils.html import format_html
 # Register your models here.
@@ -35,3 +35,4 @@ admin.site.site_header="Drag4me Admin Page"
 admin.site.register(User,Useradmin)
 admin.site.register(DragProfile,DragProfileAdmin)
 admin.site.register(FollowManager)
+admin.site.register(Transaction)

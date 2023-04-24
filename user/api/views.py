@@ -1,17 +1,19 @@
 import base64
 import json
 import re
+import random
 from django.http import QueryDict
 from rest_framework import permissions
 from rest_framework.response import Response
 from rest_framework.decorators import api_view, permission_classes, parser_classes, action
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.authtoken.models import Token
-from user.models import User, DragProfile, FollowManager
+from user.models import User, DragProfile, FollowManager, Transaction
 from user.api.serializers import RegistrationSerializer,LoginSerializer, CreateDragProfileSerializer
 from random import choice, shuffle
 from string import ascii_letters
 import itertools
+from operator import itemgetter
 from django.conf import settings
 from django.core.mail import EmailMessage,send_mail
 from rest_framework import viewsets
@@ -20,8 +22,11 @@ from rest_framework import parsers
 from django.core.files.uploadedfile import SimpleUploadedFile
 from event.models import City, DragEvent, Bookmark
 from event.api.pagination import ProfilePagination
-from event.api.serializers import CitySerializer, EventHostSerializer
+from event.api.serializers import CitySerializer, EventHostSerializer, TransactionSerializer
 from django.db import models
+from decimal import Decimal
+from event.api.utils import do_number
+from datetime import timedelta, datetime
 
 
 @api_view(['POST'])
@@ -265,7 +270,9 @@ def prepare_drag_profile(request):
     d_events = DragEvent.objects.filter(performer__in = follower.following.all())
     try:
         profile = DragProfile.objects.get(owner=user)
-
+        end_date = datetime.now() + timedelta(days=1)
+        all_trans = Transaction.objects.filter(branch=profile)
+        today_trans = all_trans.filter(date_uploaded__lt = end_date).count()
         data = dict(
             status=True,
             username = user.username,
@@ -281,7 +288,10 @@ def prepare_drag_profile(request):
             following = following-1,
             events = DragEvent.objects.filter(performer=user).count(),
             bookmarks = Bookmark.objects.get(owner=user).bookmarked_events.all().count(),
-            followed_events = d_events.count()
+            followed_events = d_events.count(),
+            branch_code = profile.branch_code,
+            all_trans= all_trans.count(),
+            today_trans = today_trans
         )
     except:
         
@@ -292,7 +302,11 @@ def prepare_drag_profile(request):
             followers = number_of_followers-1,
             following = following-1,
             bookmarks = Bookmark.objects.get(owner=user).bookmarked_events.all().count(),
-            followed_events = d_events.count()
+            followed_events = d_events.count(),
+            trans_numb = do_number(Transaction.objects.filter(payer=user).count()),
+            balance = user.balance,
+            email = user.email,
+            qid = user.qr_id
         )
     print("succes : ", data)   
     
@@ -321,7 +335,193 @@ def drag_status(request):
     return Response(result)
 
 
+def generate_code():
+    size = random.randint(10, 15)
+    result = ''.join(random.choices("123456789", k=size))
+    for  i in itertools.count(1):
+        if result not in User.objects.filter(qr_id=result).values_list('qr_id',flat=True):
+            break
+        generate_code()
 
+    return result
+
+class AroleViewSet(viewsets.ModelViewSet):
+    queryset = Transaction.objects.all()
+    pagination_class = ProfilePagination
+    parser_classes = (parsers.MultiPartParser, parsers.FormParser,parsers.JSONParser)
+
+    @action(detail=False,  methods=['GET'], permission_classes=[IsAuthenticated])
+    def transactions(self, serializer):
+        filterer = self.request.GET.get('f', None)
+        owner = self.request.GET.get('m', None)
+        if owner:
+            branch = DragProfile.objects.get(owner=self.request.user)
+            transactions = Transaction.objects.filter(branch=branch).order_by("-date_uploaded")    
+        else:
+            transactions = Transaction.objects.filter(payer=self.request.user).order_by("-date_uploaded")
+        if filterer:
+            end_date = datetime.now() + timedelta(days=1)
+            transactions = transactions.filter(date_uploaded__lt = end_date)
+        transactions_serializer = TransactionSerializer(transactions, many=True)
+        transactions_result = json.loads(json.dumps(transactions_serializer.data))
+
+        final_result = []
+        for each_day, transactions_group_by_date in itertools.groupby(transactions_result, key=itemgetter('date')):
+            date_dict = {
+                "date" : each_day,
+                "transactions" : list(transactions_group_by_date)
+            }
+            final_result.append(date_dict)
+
+        final_result = self.paginate_queryset(final_result)
+        print(final_result)
+        data = {
+            "status" : True,
+            "result" : final_result
+        }
+
+        return Response(data)
+
+
+
+
+    @action(detail=False,  methods=['POST'], permission_classes=[IsAuthenticated])
+    def credit_customer(self, serializer):
+        body =self.request.data
+        print(body)
+        mail = body["email"]
+
+        user = User.objects.get(email=mail)
+
+        amount = Decimal(body["amount"])
+        user.balance = user.balance + amount
+
+        new_transaction = Transaction.objects.create(payer=user,amount=amount, description= "Funded Account Via Paystack Gateway", reference=body["ref"], add=True)
+
+        new_transaction.branch_name = "Self Funding"
+        new_transaction.is_branch = False
+
+        new_transaction.save()
+        user.save()
+
+        return Response({
+            "status" : True,
+        })
+
+
+    @action(detail=False,  methods=['POST'], permission_classes=[IsAuthenticated])
+    def bill_customer(self, serializer):
+        body =self.request.data
+        pay_code =  int(body['pay'])
+        mail = body["email"]
+        description = body["describe"]
+        is_branch = body["is_branch"]
+
+        user = User.objects.get(email=mail)
+        if pay_code != user.pay_code:
+            return Response({
+                "status" : False,
+                "msg" : "Invalid Payment Code"
+            })
+
+        else:
+            amount = Decimal(body["amount"])
+            if user.balance < amount:
+                return Response({
+                "status" : False,
+                "msg" : "Customer balance not enough"
+            })
+            user.balance = user.balance - amount
+
+            new_transaction = Transaction.objects.create(payer=user,amount=amount, description= description, reference=generate_code(), add=False)
+
+            if is_branch:
+                branch_code = body["branch_code"]
+                branch = DragProfile.objects.get(branch_code=branch_code)
+                new_transaction.branch = branch
+                new_transaction.branch_name = branch.branch_name
+                new_transaction.branch_location = branch.branch_location
+                new_transaction.is_branch = True
+            
+            else:
+                new_transaction.branch_name = "Self Funding"
+                new_transaction.is_branch = False
+
+            new_transaction.save()
+            user.save()
+
+            return Response({
+                "status" : True,
+            })
+
+
+    @action(detail=False,  methods=['GET'], permission_classes=[IsAuthenticated])
+    def scan_qr(self, serializer): 
+        try:
+            code = self.request.GET.get('g', None)
+            for i in User.objects.all():
+                print(i.qr_id)
+            print(code, User.objects.filter(qr_id = code))
+            user = User.objects.get(qr_id = code)
+            data = dict(
+                status = True,
+                name = user.fullname,
+                user_name = user.email
+            )
+        except:
+            data = {
+                "status" : False
+            }
+
+
+        return Response(data)
+
+    @action(detail=False,  methods=['POST'], permission_classes=[IsAuthenticated])
+    def save_qr(self, serializer):
+        body =self.request.data
+        code = body["code"]
+        pay =  body["pay"]
+        user = User.objects.get(pk = self.request.user.pk)
+        user.qr_id = code
+        user.pay_code = pay
+        user.save()
+        print("NEW : ", user.qr_id)
+
+        data = {
+            "status" : True,
+        }
+
+        return Response(data)
+        
+
+
+    @action(detail=False,  methods=['GET'], permission_classes=[IsAuthenticated])
+    def run_qr(self, serializer):
+        print("EUN CODE : ",self.request.user.qr_id)
+        if self.request.user.qr_id:
+            data = dict(
+                exists = True,
+                new_code = generate_code(),
+                code = self.request.user.qr_id
+            )
+        else:
+            print("Now")
+            data = dict(
+                exists = False,
+                code = generate_code(),
+            )
+        print("DATA : ", data)
+        return Response(data)
+
+    # @action(detail=False,  methods=['POST'], permission_classes=[IsAuthenticated])
+    # def new_qr(self, serializer):
+    #     info = json.loads(self.request.data.get('data'))
+    #     user = User.objects.get(pk=self.request.user.pk)
+    #     user.qr_id = info["code"]
+    #     user.pay_code = info["pay"]
+    #     user.save()
+
+    #     return Response({"status": "success"})
 
 class DragProfileViewSet(viewsets.ModelViewSet):
     queryset = DragProfile.objects.all()
