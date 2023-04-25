@@ -135,10 +135,10 @@ USE_L10N = True
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/3.0/howto/static-files/
-TEST = "https://drag4me.pythonanywhere.com"
+TEST = "https://arolegaming.pythonanywhere.com"
 LOCAL =  "http://192.168.12.56:8000"
 PROD = ""
-MY_SITE = LOCAL
+MY_SITE = TEST
 
 LOGIN_REDIRECT_URL= 'index'
 LOGIN_URL = 'login'
