@@ -270,9 +270,12 @@ def prepare_drag_profile(request):
     d_events = DragEvent.objects.filter(performer__in = follower.following.all())
     try:
         profile = DragProfile.objects.get(owner=user)
-        end_date = datetime.now() + timedelta(days=1)
         all_trans = Transaction.objects.filter(branch=profile)
-        today_trans = all_trans.filter(date_uploaded__lt = end_date).count()
+        end_date = datetime.now()
+        end_date = str(end_date.date())
+        end_date = datetime.fromisoformat(end_date)
+        today_trans = all_trans.filter(date_uploaded__gte = end_date).count()
+        
         data = dict(
             status=True,
             username = user.username,
@@ -360,10 +363,10 @@ class AroleViewSet(viewsets.ModelViewSet):
         else:
             transactions = Transaction.objects.filter(payer=self.request.user).order_by("-date_uploaded")
         if filterer:
-            end_date = datetime.now() + timedelta(days=1)
+            end_date = datetime.now()
             end_date = str(end_date.date())
-            end_date = datetime().fromisoformat(end_date)
-            transactions = transactions.filter(date_uploaded__lt = end_date)
+            end_date = datetime.fromisoformat(end_date)
+            transactions = transactions.filter(date_uploaded__gte = end_date)
         transactions_serializer = TransactionSerializer(transactions, many=True)
         transactions_result = json.loads(json.dumps(transactions_serializer.data))
 
