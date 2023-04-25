@@ -361,6 +361,8 @@ class AroleViewSet(viewsets.ModelViewSet):
             transactions = Transaction.objects.filter(payer=self.request.user).order_by("-date_uploaded")
         if filterer:
             end_date = datetime.now() + timedelta(days=1)
+            end_date = str(end_date.date())
+            end_date = datetime().fromisoformat(end_date)
             transactions = transactions.filter(date_uploaded__lt = end_date)
         transactions_serializer = TransactionSerializer(transactions, many=True)
         transactions_result = json.loads(json.dumps(transactions_serializer.data))
