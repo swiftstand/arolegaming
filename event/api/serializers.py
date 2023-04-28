@@ -181,7 +181,7 @@ class TransactionSerializer(serializers.ModelSerializer):
         if obj.is_branch:
             return obj.payer.fullname
         else:
-            return "Paystack Gateway"
+            return "Flutterwave Gateway"
 
     def get_branch_name(self, obj):
         if obj.is_branch and obj.branch:

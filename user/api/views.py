@@ -401,7 +401,7 @@ class AroleViewSet(viewsets.ModelViewSet):
         amount = Decimal(body["amount"])
         user.balance = user.balance + amount
 
-        new_transaction = Transaction.objects.create(payer=user,amount=amount, description= "Funded Account Via Paystack Gateway", reference=body["ref"], add=True)
+        new_transaction = Transaction.objects.create(payer=user,amount=amount, description= "Funded Account Via Flutterwave Gateway", reference=body["ref"], add=True)
 
         new_transaction.branch_name = "Self Funding"
         new_transaction.is_branch = False
