@@ -5,6 +5,7 @@ from  django.conf import  settings
 from django.utils.text import slugify
 from random import choice
 from string import ascii_letters
+import random
 import  itertools
 from  django.utils import  timezone
 from datetime import datetime
@@ -169,13 +170,13 @@ def upload_to(instance, filename):
 
 
 class DragProfile(models.Model):
-    owner=models.OneToOneField(settings.AUTH_USER_MODEL,on_delete=models.CASCADE)
-    image=models.ImageField(upload_to='user_profile_pics',default='user_default.png')
-    about_me=models.TextField(blank=True,null=True, default='')
+    owner=models.OneToOneField(settings.AUTH_USER_MODEL,on_delete=models.CASCADE, verbose_name="branch account")
+    image=models.ImageField(upload_to='user_profile_pics',default='user_default.png', verbose_name='branch image')
+    about_me=models.TextField(blank=True,null=True, default='', verbose_name="branch description")
     approved=models.BooleanField(default=False)
     locked=models.BooleanField(default=False)
-    availability = models.BooleanField(default=True)
-    website_url = models.CharField(max_length=1000, null=True, blank=True)
+    availability = models.BooleanField(default=True, editable=False)
+    website_url = models.CharField(max_length=1000, null=True, blank=True, editable=False)
     tip_url = models.CharField(max_length=1000, null=True, blank=True)
     city=models.TextField(null=False, blank=False,default='input address', editable=False)
     instagram = models.CharField(max_length=1000, null=True, blank=True)
@@ -183,48 +184,57 @@ class DragProfile(models.Model):
     twitter = models.CharField(max_length=1000, null=True, blank=True)
     youtube = models.CharField(max_length=1000, null=True, blank=True)
     facebook = models.CharField(max_length=1000, null=True, blank=True)
-    mail = models.CharField(max_length=1000, null=True, blank=True)
-    branch_code = models.CharField(max_length=12, null=True, default="0")
-    branch_name = models.CharField(max_length=1000, null=True, default="Oye Ekiti")
-    branch_location = models.CharField(max_length=1000, null=True)
+    mail = models.CharField(max_length=1000, null=True, blank=True, editable=False)
+    branch_code = models.CharField(max_length=12, null=True, default="0", editable=False)
+    branch_name = models.CharField(max_length=1000, null=True)
+    branch_location = models.CharField(max_length=1000, null=True, default="Oye Ekiti")
     
 
     """ To change to JsonField in production """
     social_links = models.CharField(max_length=1000, null=True, editable=False)
     links = models.CharField(max_length=1000, null=True, editable=False)
 
-    def generate_code():
+    def generate_code(self):
         size = random.randint(10, 15)
         result = ''.join(random.choices("123456789", k=size))
         for  i in itertools.count(1):
             if result not in User.objects.filter(qr_id=result).values_list('qr_id',flat=True):
                 break
-            generate_code()
+            self.generate_code()
         return result
 
     def save(self):
         if self.branch_code == "0" or not self.pk:
             self.branch_code = self.generate_code()
-        
         super().save()
 
 
     def __str__(self):
         return 'performer profile'.format(self.owner.username)
+    
+
+    class Meta:
+        verbose_name = "Branch Profile"
+        verbose_name_plural  = "Branch Profiles"
 
 class Transaction(models.Model):
     payer = models.ForeignKey(settings.AUTH_USER_MODEL, null=True,on_delete=models.SET_NULL)
     branch = models.ForeignKey(DragProfile, null=True,on_delete= models.SET_NULL)
     amount = models.DecimalField(decimal_places=2, max_digits=100)
-    branch_name = models.CharField(max_length=1000, null= True)
-    branch_location = models.CharField(max_length=1000, null=True)
-    description = models.CharField(max_length=200, null=True)
-    date_uploaded = models.DateTimeField(verbose_name='date made', default=datetime.now())
+    branch_name = models.CharField(max_length=1000, null= True, editable=False)
+    branch_location = models.CharField(max_length=1000, null=True, editable=False)
+    description = models.CharField(max_length=200, null=True,editable=False)
+    date_uploaded = models.DateTimeField(verbose_name='date made', default=timezone.now)
     reference= models.CharField(max_length=1000, null=True)
     is_branch = models.BooleanField(default=False)
     add = models.BooleanField(default=False)
     
 
+    def __str__(self) -> str:
+        if self.add:
+            return f'{self.payer.fullname} funded ₦{self.amount} via {self.description}'
+        else:
+            return f'{self.branch_name} Branch billed {self.payer.fullname} ₦{self.amount}'
 
 
 

@@ -9,6 +9,7 @@ from rest_framework.decorators import api_view, permission_classes, parser_class
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.authtoken.models import Token
 from user.models import User, DragProfile, FollowManager, Transaction
+from user.arole import send_reset_mail
 from user.api.serializers import RegistrationSerializer,LoginSerializer, CreateDragProfileSerializer
 from random import choice, shuffle
 from string import ascii_letters
@@ -191,16 +192,13 @@ def forgotpassword(request):
             token = Token.objects.create(user=user)
         token.save()
         reset_val=set_resetter()
-        """email_subject='Hi {}, Request to Reset Password'.format(user.fullname)
-        email_body='we received a request to reset your account password.If this request was not made by you kindly ignore as your account is safe with us.\nIf the request was made by you kindly make use of the code below.\n\n\n{}'.format(reset_val)
-        email = EmailMessage(
-                                email_subject,
-                                email_body,
-                                'officialswiftstand@gmail.com',
-                                [user.email],
-                            )
-        email.send(fail_silently=False)"""
-        user.resetter='123456789abc'
+        user.resetter=reset_val
+        name = user.firstname
+        # try:
+
+        send_reset_mail(receiver=email, code=user.resetter, name=name)
+        # except Exception as e:
+        #     raise e
         user.save(update_fields=['resetter'])
         data['status'] = 'success'
         data['token'] = token.key
@@ -400,8 +398,13 @@ class AroleViewSet(viewsets.ModelViewSet):
 
         amount = Decimal(body["amount"])
         user.balance = user.balance + amount
+        is_flutt = body["is_flutt"]
+        if is_flutt:
+            description= "Flutterwave Gateway"
+        else:
+            description= "Paystack Gateway"
 
-        new_transaction = Transaction.objects.create(payer=user,amount=amount, description= "Funded Account Via Flutterwave Gateway", reference=body["ref"], add=True)
+        new_transaction = Transaction.objects.create(payer=user,amount=amount, description=description, reference=body["ref"], add=True)
 
         new_transaction.branch_name = "Self Funding"
         new_transaction.is_branch = False

@@ -163,6 +163,7 @@ class TransactionSerializer(serializers.ModelSerializer):
     
     def get_time(self, obj):
         time = obj.date_uploaded.time()
+        print("TIME: ",time)
         if time.hour > 0 and time.hour < 12:
             comp = " am"
         else:
@@ -181,7 +182,7 @@ class TransactionSerializer(serializers.ModelSerializer):
         if obj.is_branch:
             return obj.payer.fullname
         else:
-            return "Flutterwave Gateway"
+            return obj.description
 
     def get_branch_name(self, obj):
         if obj.is_branch and obj.branch:

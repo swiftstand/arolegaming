@@ -1,6 +1,11 @@
+from typing import Any, Optional
 from django.contrib import admin
+from django.db.models.fields.related import ForeignKey
+from django.forms.models import ModelChoiceField
+from django.http.request import HttpRequest
 from user.models import User, DragProfile, FollowManager, Transaction
 from django.urls import reverse
+from django import forms
 from django.utils.html import format_html
 # Register your models here.
 
@@ -8,6 +13,14 @@ from django.utils.html import format_html
 class Useradmin(admin.ModelAdmin):
 
     list_display = ['email','is_drag_performer',]
+
+# class DragProfileAdminForm(forms.ModelForm):
+#     class Meta:
+#         model = DragProfile
+#         fields = "__all__"
+
+#     def clean_owner(self):
+#         if self.
 
 class DragProfileAdmin(admin.ModelAdmin):
 
@@ -31,8 +44,17 @@ class DragProfileAdmin(admin.ModelAdmin):
         f_manager = FollowManager.objects.get(owner=obj.owner)
         return "{} DragProfiles".format(f_manager.count_following())
 
+    def get_form(self, request, obj=None, **kwargs):
+        profile_users = DragProfile.objects.all().values_list('owner',flat=True)
+        form = super(DragProfileAdmin, self).get_form(request, obj, **kwargs)
+        if not obj:
+            form.base_fields['owner'].queryset = User.objects.exclude(pk__in = profile_users)
+        else:
+            form.base_fields['owner'].queryset = User.objects.filter(pk = obj.owner.pk)
+        return form
+    
+
 admin.site.site_header="Drag4me Admin Page"
 admin.site.register(User,Useradmin)
 admin.site.register(DragProfile,DragProfileAdmin)
-admin.site.register(FollowManager)
 admin.site.register(Transaction)
