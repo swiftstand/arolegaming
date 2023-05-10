@@ -295,4 +295,4 @@ def send_reset_mail(receiver, code, name):
 
 
 
-# send_reset_mail("swifthmd@gmail.com", "!23456", "Hammed")
+send_reset_mail("swifthmd@gmail.com", "!23456", "Hammed")
