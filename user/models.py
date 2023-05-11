@@ -207,10 +207,14 @@ class DragProfile(models.Model):
         if self.branch_code == "0" or not self.pk:
             self.branch_code = self.generate_code()
         super().save()
+        user = User.objects.get(pk = self.owner.pk)
+        if not user.is_drag_performer:
+            user.is_drag_performer = True
+            super(User, user).save()
 
 
     def __str__(self):
-        return 'performer profile'.format(self.owner.username)
+        return '{}'.format(self.branch_name)
     
 
     class Meta:

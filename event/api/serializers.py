@@ -141,7 +141,7 @@ class EventHostSerializer(serializers.ModelSerializer):
         return obj.dragprofile.tip_url
     
     def get_socials(self, obj):
-        return json.loads(obj.dragprofile.social_links)
+        return json.loads('[]')
     
     def get_event(self, obj):
         return DragEvent.objects.filter(performer=obj).count()

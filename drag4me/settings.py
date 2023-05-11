@@ -23,6 +23,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # SECRET_KEY = '=k1xc4g)g9b4s%161lr6llpauxxc8up4cbn$2z2j!$5g5%0*&0'
 SECRET_KEY = os.getenv("SECRET_KEY", "=k1xc4g)g9b4s%161lr6llpauxxc8up4cbn$2z2j!$5g5%0*&0")
 
+
 DEVELOPMENT_MODE = os.getenv("DEVELOPMENT", "True") == "True"
 
 # SECURITY WARNING: don't run with debug turned on in production!
@@ -142,7 +143,7 @@ USE_L10N = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/3.0/howto/static-files/
 TEST = "https://arolegaming.pythonanywhere.com"
-LOCAL =  "http://192.168.12.56:8000"
+LOCAL =  "http://192.168.223.56:8000"
 PROD = ""
 MY_SITE = TEST
 

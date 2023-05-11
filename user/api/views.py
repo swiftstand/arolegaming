@@ -282,7 +282,7 @@ def prepare_drag_profile(request):
             about_me = profile.about_me,
             city = profile.city,
             availability = profile.availability,
-            socials = json.loads(profile.social_links),
+            socials = json.loads('[]'),
             website_url = profile.website_url,
             tip_url = profile.tip_url,
             followers = number_of_followers-1,
@@ -294,8 +294,8 @@ def prepare_drag_profile(request):
             all_trans= all_trans.count(),
             today_trans = today_trans
         )
-    except:
-        
+    except Exception as r:
+        print(r)
         data = dict(
             status=True,
             username = user.username,
