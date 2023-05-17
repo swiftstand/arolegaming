@@ -112,6 +112,8 @@ class EventHostSerializer(serializers.ModelSerializer):
     tip_url = serializers.SerializerMethodField()
     socials = serializers.SerializerMethodField()
     event = serializers.SerializerMethodField()
+    branch_name = serializers.SerializerMethodField()
+    branch_location = serializers.SerializerMethodField()
 
 
     def get_image(self, obj):
@@ -145,9 +147,16 @@ class EventHostSerializer(serializers.ModelSerializer):
     
     def get_event(self, obj):
         return DragEvent.objects.filter(performer=obj).count()
+    
+    def get_branch_name(self, obj):
+        return obj.dragprofile.branch_name
+    
+    def get_branch_location(self, obj):
+        return obj.dragprofile.branch_location
+    
     class Meta:
         model = User
-        fields = ('id','username', 'email','tip_url', 'website_url','about_me','availability','fullname', 'city', 'image', 'followers', 'following', 'event', 'socials')
+        fields = ('id','username', 'branch_name', 'branch_location','email','tip_url', 'website_url','about_me','availability','fullname', 'city', 'image', 'followers', 'following', 'event', 'socials')
 
 
 class TransactionSerializer(serializers.ModelSerializer):

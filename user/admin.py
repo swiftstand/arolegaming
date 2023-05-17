@@ -42,13 +42,13 @@ class DragProfileAdmin(admin.ModelAdmin):
         profile_users = DragProfile.objects.all().values_list('owner',flat=True)
         form = super(DragProfileAdmin, self).get_form(request, obj, **kwargs)
         if not obj:
-            form.base_fields['owner'].queryset = User.objects.exclude(pk__in = profile_users)
+            form.base_fields['owner'].queryset = User.objects.exclude(pk__in = profile_users).order_by('-pk')
         else:
             form.base_fields['owner'].queryset = User.objects.filter(pk = obj.owner.pk)
         return form
     
 
-admin.site.site_header="Drag4me Admin Page"
+admin.site.site_header="Arole Playstation Admin Page"
 # admin.site.register(User,Useradmin)
 admin.site.register(DragProfile,DragProfileAdmin)
 admin.site.register(Transaction)
