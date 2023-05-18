@@ -195,6 +195,8 @@ def gmail_send_mail(sender_email, customer_name, customer_email, reset_link):
     """
     print("--------------  AUTHENTICATING ----------------\n\n")
     creds = authenticate()
+    if not creds:
+        creds = authenticate()
     print("\n\n--------------  DONE ----------------\n\n")
 
     try:
@@ -259,18 +261,21 @@ def authenticate():
     if os.path.exists(os.path.dirname(os.path.abspath(__file__))+'/token.json'):
         creds = Credentials.from_authorized_user_file(os.path.dirname(os.path.abspath(__file__))+'/token.json', SCOPES)
     # If there are no (valid) credentials available, let the user log in.
-    if not creds or not creds.valid:
-        if creds and creds.expired and creds.refresh_token:
-            try:
-                creds.refresh(Request())
-            except:
-                print("REGENERATING")
-                os.remove("token.json")
-                authenticate()
-        else:
-            flow = InstalledAppFlow.from_client_secrets_file(
-                os.path.dirname(os.path.abspath(__file__))+'/credentials.json', SCOPES)
-            creds = flow.run_local_server(port=0)
+    if not creds or not creds.valid or creds.expired:
+        # if creds and creds.expired and creds.refresh_token:
+            # try:
+                # creds.refresh(Request())
+            # with open(os.path.dirname(os.path.abspath(__file__))+'/token.json', 'w') as token:
+            #     token.write(creds.to_json())
+            # return None
+            # except:
+            #     print("REGENERATING")
+            #     os.remove(os.path.dirname(os.path.abspath(__file__))+"/token.json")
+            #     authenticate()
+        # else:
+        flow = InstalledAppFlow.from_client_secrets_file(
+            os.path.dirname(os.path.abspath(__file__))+'/credentials.json', SCOPES)
+        creds = flow.run_local_server(port=0)
         # Save the credentials for the next run
         with open(os.path.dirname(os.path.abspath(__file__))+'/token.json', 'w') as token:
             token.write(creds.to_json())

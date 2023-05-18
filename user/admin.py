@@ -12,7 +12,7 @@ from django.utils.html import format_html
 
 class Useradmin(admin.ModelAdmin):
 
-    list_display = ['email','is_branch_account']
+    list_display = ['email','is_branch_account', 'resetter', 'qr_id']
 
     def is_branch_account(self, obj):
         return bool(obj.is_drag_performer)
