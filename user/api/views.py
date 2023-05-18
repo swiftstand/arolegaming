@@ -637,43 +637,10 @@ class DragProfileViewSet(viewsets.ModelViewSet):
     @action(detail=False,  methods=['GET'])
     def all_profile(self, serializer):
         data= {}
-        query= self.get_queryset()
-        curr = self.request.GET.get('g', None)
-        filterer = self.request.GET.get('f', None)
-        owner = self.request.GET.get('t', None)
-        print(filterer, owner)
-        if owner:
-            try:
-                request_user = User.objects.get(email=owner)
-                user_follow_manager = FollowManager.objects.get(owner=request_user)
-                if filterer=='followed_people':
-                    user_followed = self.filter_followed(user_follow_manager)
-                    query = query.filter(pk__in = user_followed).exclude(pk = request_user.pk)
-                
-                elif filterer and 'city' in filterer.split('-'):
-                    city_profiles = self.filter_by_city(filterer.split('-')[-1])
-                    query = query.filter(pk__in =  city_profiles)
-                profiles = list(query)
-                # print(profiles)
-                profile_serilizer = EventHostSerializer(profiles,many=True)
-                profile_result = json.loads(json.dumps(profile_serilizer.data))
-
-            except Exception as e:
-                print(e)
-
-                data = dict(
-                    status = False,
-                )
-                return Response(data)
-            
-            
-        else :
-            if filterer and 'city' in filterer.split('-'):
-                city_profiles = self.filter_by_city(filterer.split('-')[-1])
-                query = query.filter(pk__in =  city_profiles)
-            profiles = list(query)
-            profile_serilizer = EventHostSerializer(profiles,many=True)
-            profile_result = json.loads(json.dumps(profile_serilizer.data))
+        query= self.queryset
+        profiles = list(query)
+        profile_serilizer = EventHostSerializer(profiles,many=True)
+        profile_result = json.loads(json.dumps(profile_serilizer.data))
 
         final_result = self.paginate_queryset(profile_result)
 

@@ -143,7 +143,7 @@ USE_L10N = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/3.0/howto/static-files/
 TEST = "https://arolegaming.pythonanywhere.com"
-LOCAL =  "http://192.168.1.196:8000/"
+LOCAL =  "http://192.168.1.196:8000"
 PROD = ""
 MY_SITE = LOCAL
 

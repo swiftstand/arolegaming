@@ -104,59 +104,46 @@ class SerializeAllEvents(serializers.ModelSerializer):
 class EventHostSerializer(serializers.ModelSerializer):
     city = serializers.SerializerMethodField()
     image = serializers.SerializerMethodField()
-    followers = serializers.SerializerMethodField()
-    following = serializers.SerializerMethodField()
     availability = serializers.SerializerMethodField()
     about_me = serializers.SerializerMethodField()
     website_url = serializers.SerializerMethodField()
     tip_url = serializers.SerializerMethodField()
     socials = serializers.SerializerMethodField()
-    event = serializers.SerializerMethodField()
-    branch_name = serializers.SerializerMethodField()
-    branch_location = serializers.SerializerMethodField()
+    branch_name = ""
+    branch_location = ""
 
 
     def get_image(self, obj):
-        return settings.MY_SITE + obj.dragprofile.image.url
+        return settings.MY_SITE + obj.image.url
     
     def get_city(self, obj):
-        return obj.dragprofile.city
-    
-    def get_followers(self, obj):
-        f_manager = FollowManager.objects.get(owner=obj)
-        return f_manager.count_followers()-1
-    
-    def get_following(self, obj):
-        f_manager = FollowManager.objects.get(owner=obj.pk)
-        return f_manager.count_following()-1
+        return obj.city
     
     def get_availability(self, obj):
-        return obj.dragprofile.availability
+        return obj.availability
     
     def get_about_me(self, obj):
-        return obj.dragprofile.about_me
+        return obj.about_me
     
     def get_website_url(self, obj):
-        return obj.dragprofile.website_url
+        return obj.website_url
     
     def get_tip_url(self, obj):
-        return obj.dragprofile.tip_url
+        return obj.tip_url
     
     def get_socials(self, obj):
         return json.loads('[]')
     
-    def get_event(self, obj):
-        return DragEvent.objects.filter(performer=obj).count()
     
     def get_branch_name(self, obj):
-        return obj.dragprofile.branch_name
+        return obj.branch_name
     
     def get_branch_location(self, obj):
-        return obj.dragprofile.branch_location
+        return obj.branch_location
     
     class Meta:
-        model = User
-        fields = ('id','username', 'branch_name', 'branch_location','email','tip_url', 'website_url','about_me','availability','fullname', 'city', 'image', 'followers', 'following', 'event', 'socials')
+        model = DragProfile
+        fields = ('id', 'branch_name', 'branch_location','tip_url', 'website_url','about_me','availability', 'city', 'image', 'socials')
 
 
 class TransactionSerializer(serializers.ModelSerializer):
