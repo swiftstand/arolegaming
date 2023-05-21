@@ -434,7 +434,7 @@ class AroleViewSet(viewsets.ModelViewSet):
 
         else:
             amount = Decimal(body["amount"])
-            if user.balance < amount:
+            if user.balance < amount or user.balance == 0:
                 return Response({
                 "status" : False,
                 "msg" : "Customer balance not enough"
@@ -467,14 +467,15 @@ class AroleViewSet(viewsets.ModelViewSet):
     def scan_qr(self, serializer): 
         try:
             code = self.request.GET.get('g', None)
-            for i in User.objects.all():
-                print(i.qr_id)
+            branch = self.request.GET.get('b', None)
             print(code, User.objects.filter(qr_id = code))
+            branch_name = DragProfile.objects.get(branch_code = branch).branch_name
             user = User.objects.get(qr_id = code)
             data = dict(
                 status = True,
                 name = user.fullname,
-                user_name = user.email
+                user_name = user.email,
+                branch_name = branch_name
             )
         except:
             data = {
@@ -488,6 +489,7 @@ class AroleViewSet(viewsets.ModelViewSet):
     def save_qr(self, serializer):
         body =self.request.data
         code = body["code"]
+        print("CD :", code)
         pay =  body["pay"]
         user = User.objects.get(pk = self.request.user.pk)
         user.qr_id = code
@@ -516,7 +518,7 @@ class AroleViewSet(viewsets.ModelViewSet):
             print("Now")
             data = dict(
                 exists = False,
-                code = generate_code(),
+                new_code = generate_code(),
             )
         print("DATA : ", data)
         return Response(data)

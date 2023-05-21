@@ -49,6 +49,6 @@ class DragProfileAdmin(admin.ModelAdmin):
     
 
 admin.site.site_header="Arole Playstation Admin Page"
-# admin.site.register(User,Useradmin)
+admin.site.register(User,Useradmin)
 admin.site.register(DragProfile,DragProfileAdmin)
 admin.site.register(Transaction)
