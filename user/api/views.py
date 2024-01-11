@@ -10,7 +10,7 @@ from rest_framework.decorators import api_view, permission_classes, parser_class
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.authtoken.models import Token
 from user.models import User, DragProfile, FollowManager, Transaction
-from user.arole import send_reset_mail
+# from user.arole import send_reset_mail
 from user.api.serializers import RegistrationSerializer,LoginSerializer, CreateDragProfileSerializer
 from random import choice, shuffle
 from string import ascii_letters

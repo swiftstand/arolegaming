@@ -38,8 +38,6 @@ ALLOWED_HOSTS = os.getenv("HOSTS", "*").split(",")
 # Application definition
 
 INSTALLED_APPS = [
-    'event.apps.EventConfig',
-    'user.apps.UserConfig',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -50,6 +48,9 @@ INSTALLED_APPS = [
     'rest_framework.authtoken',
     'corsheaders',
     'storages',
+
+    'event',
+    'user',
 ]
 
 REST_FRAMEWORK = {
