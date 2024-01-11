@@ -232,7 +232,7 @@ class Transaction(models.Model):
     reference= models.CharField(max_length=1000, null=True)
     is_branch = models.BooleanField(default=False)
     add = models.BooleanField(default=False)
-    
+    completed = models.BooleanField(default=True)    
 
     def __str__(self) -> str:
         if self.add:

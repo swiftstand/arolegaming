@@ -1,0 +1,97 @@
+{% extends 'user/base.html' %}
+{% load static %}
+
+{% block header %}
+    <section id="header" class="main-header about-header inner-header">
+        <div class="container">
+
+            <div class="row">
+                <nav class="navbar navbar-default">
+                    <div class="navbar-header">
+                        <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#site-nav-bar" aria-expanded="false">
+                            <span class="sr-only">Toggle navigation</span>
+                            <span class="icon-bar"></span>
+                            <span class="icon-bar"></span>
+                            <span class="icon-bar"></span>
+                        </button>
+                    </div>
+
+                    <div class="collapse navbar-collapse" id="site-nav-bar">
+                        <ul class="nav navbar-nav">
+                            <li><a href="{% url 'index' %}">Home</a></li>
+                            {% if request.user.is_authenticated %}
+                                <li class="active"><a href="{% url 'web_profile' %}">Profile</a></li>
+                                <li><a href="{% url 'web_logout' %}">Logout</a></li>
+                            {% else %}
+                                <li><a href="{% url 'web_login' %}">Login</a></li>
+                                <li><a href="{% url 'web_register' %}">Register</a></li>
+                            {% endif %}
+                        </ul>
+                    </div><!-- /.navbar-collapse -->
+                </nav>
+            </div>
+            
+            <div class="intro row">
+                <div class="overlay"></div>
+                <div class="col-sm-12">
+                    <ol class="breadcrumb">
+                        <li><a href="{% url 'index' %}">Home</a></li>
+                        <li class="active">Profile</li>
+                    </ol>
+                </div>
+            </div> <!-- /.intro.row -->
+        </div> <!-- /.container -->
+        <div class="nutral"></div>
+    </section> <!-- /#header -->
+{% endblock header %}
+
+
+{% block content %}
+    <!-- About -->
+    <section class="about">
+        <div class="container page-bgc">
+            <div class="row">
+                <div class="col-sm-12">
+                    <div class="title-box">
+                        <h2 class="title mt0">Wallet Profile Page</h2>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="boxed">
+                    <div class="col-sm-12">
+                        <p class="inner-p">
+                            From your profile page you can fund your wallet, view amount left in your wallet.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    
+    <section id="history" class="history">
+        <div class="container section-bg">
+            <div class="row">
+                <div class="col-sm-12">
+                    <div class="title-box">
+                        <p>PROFILE BALANCE</p>
+                        <h2 class="title mt0">&#x20A6;{{request.user.balance}}</h2>
+                        <div class="text-center col-sm-12" style="margin-bottom: 20px;">
+                            <form method="post">
+                                {% csrf_token %}
+                                <input type="number" id="amount" name="amount" required placeholder="enter amount to fund" >
+                                <br>
+                                <button type="submit" class="btn btn-robot" >FUND ACCOUNT</button>
+                            </form>
+                        </div>
+                        <div class="text-center col-sm-12" style="margin-bottom: 20px;">
+                            <button type="submit" class="btn btn-default" ><a href="{% url 'display_qr' %}" style="text-decoration: none;">VIEW QR-CODE</a></button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+{% endblock content %}
+

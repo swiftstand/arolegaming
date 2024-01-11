@@ -2,6 +2,7 @@ import base64
 import json
 import re
 import random
+import string
 from django.http import QueryDict
 from rest_framework import permissions
 from rest_framework.response import Response
@@ -192,11 +193,11 @@ def forgotpassword(request):
             token = Token.objects.create(user=user)
         token.save()
         reset_val=set_resetter()
-        user.resetter=reset_val
+        user.resetter= "123456" #reset_val
         name = user.firstname
         # try:
 
-        send_reset_mail(receiver=email, code=user.resetter, name=name)
+        # send_reset_mail(receiver=email, code=user.resetter, name=name)
         # except Exception as e:
         #     raise e
         user.save(update_fields=['resetter'])
@@ -338,7 +339,7 @@ def drag_status(request):
 
 def generate_code():
     size = random.randint(10, 15)
-    result = ''.join(random.choices("123456789", k=size))
+    result = ''.join(random.choices("" + string.ascii_lowercase + string.ascii_uppercase, k=size))
     for  i in itertools.count(1):
         if result not in User.objects.filter(qr_id=result).values_list('qr_id',flat=True):
             break
@@ -377,7 +378,7 @@ class AroleViewSet(viewsets.ModelViewSet):
             final_result.append(date_dict)
 
         final_result = self.paginate_queryset(final_result)
-        print(final_result)
+        
         data = {
             "status" : True,
             "result" : final_result

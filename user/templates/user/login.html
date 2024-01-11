@@ -1,0 +1,93 @@
+{% extends 'user/base.html' %}
+{% load static %}
+
+{% block header %}     
+    <!-- Header -->
+    <section id="header" class="main-header contact-header inner-header">
+        <div class="container">
+            <div class="row">
+                <nav class="navbar navbar-default">
+                    <div class="navbar-header">
+                        <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#site-nav-bar" aria-expanded="false">
+                            <span class="sr-only">Toggle navigation</span>
+                            <span class="icon-bar"></span>
+                            <span class="icon-bar"></span>
+                            <span class="icon-bar"></span>
+                        </button>
+                    </div>
+
+                    <div class="collapse navbar-collapse" id="site-nav-bar">
+                        <ul class="nav navbar-nav">
+                            <li><a href="{% url 'index' %}">Home</a></li>
+                            <li class="active"><a href="{% url 'web_login' %}">Login</a></li>
+                            <li><a href="{% url 'web_register' %}">Register</a></li>
+                        </ul>
+                    </div><!-- /.navbar-collapse -->
+                </nav>
+            </div>
+            
+            <div class="intro row">
+                <div class="overlay"></div>
+                <div class="col-sm-12">
+                    <ol class="breadcrumb">
+                        <li><a href="{% url 'index' %}">Home</a></li>
+                        <li class="active">Login</li>
+                    </ol>
+                </div>
+            </div> <!-- /.intro.row -->
+        </div> <!-- /.container -->
+        <div class="nutral"></div>
+    </section> <!-- /#header -->
+{% endblock header %}
+
+{% block content %}
+    <section class="contact">
+        <div class="container page-bgc">
+            <div class="row">
+                <div class="col-sm-12">
+                    <div class="title-box">
+                        <h2 class="title mt0">Login to your account</h2>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="boxed">
+                    <div class="col-sm-12">
+                        <h4>Fill Form to login</h4>
+                        <form class="contact-form" id="contactForm" method="post">
+                            {% csrf_token %}
+                            {% if form.non_field_errors %}
+                                <div class="alert alert-danger" role="alert">
+                                    {% for error in form.non_field_errors %}
+                                        {{error}}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                            <div class="row">
+                                <div class="col-sm-6">
+                                    <div class="form-group">
+                                        <input type="email" class="form-control" {% if form.is_bound %} value="{{form.email.value}}" {% endif %} placeholder="Email*" id="id_email" name="email">
+                                        {% if form.email.errors %}
+                                            {% for error in form.email.errors %}
+                                                <p class="invalid-feedback  alert alert-danger">{{ error }}</p>
+                                            {% endfor %}
+                                        {% endif %}
+                                    </div> <!-- /.form-group -->
+                                </div> <!-- /.col-sm-6 -->
+                                <div class="col-sm-6">
+                                    <div class="form-group">
+                                        <input type="password" class="form-control" placeholder="Password*" id="id_password" name="password" required>
+                                    </div> <!-- /.form-group -->
+                                </div> <!-- /.col-sm-6 -->
+                                <div class="text-center mt20 col-sm-12">
+                                    <button type="submit" class="btn btn-robot pull-left" id="cfsubmit">Login</button>
+                                </div>
+                            </div>
+                        </form>
+                        <div id="contactFormResponse"></div>
+                    </div> <!-- /.col-sm-12 -->
+                </div>
+            </div>
+        </div>
+    </section>
+{% endblock content %}

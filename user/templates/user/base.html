@@ -1,0 +1,90 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+
+        <title>Arole Playstation Center</title>
+
+        <!-- CSS -->
+
+        <!-- google fonts -->
+        <link href='https://fonts.googleapis.com/css?family=Roboto:400,300,500,700' rel='stylesheet' type='text/css'>
+        <link href='https://fonts.googleapis.com/css?family=Oswald:400,300,700' rel='stylesheet' type='text/css'>
+
+        <!-- files -->
+        <link href="{% static 'user/assets/css/bootstrap.min.css' %}" rel="stylesheet">
+        <link href="{% static 'user/assets/css/magnific-popup.css' %}" rel="stylesheet">
+        <link href="{% static 'user/assets/css/owl.carousel.css' %}" rel="stylesheet">
+        <link href="{% static 'user/assets/css/owl.carousel.theme.min.css' %}" rel="stylesheet">
+        <link href="{% static 'user/assets/css/ionicons.css' %}" rel="stylesheet">
+        <link href="{% static 'user/assets/css/main.css' %}" rel="stylesheet">
+
+        <!--[if lt IE 9]>
+          <script src="https://oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
+          <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
+        <![endif]-->
+    </head>
+    <body>
+
+    <!-- Site Header -->
+        <div class="site-header-bg">
+            <div class="container">
+                <div class="row">
+                    <div class="col-sm-6">
+                        <h2 class="header-quote">AROLE</h2>
+                        <p class="header-title">Playstation Center</p>
+                    </div>
+                    <div class="col-sm-3 col-sm-offset-3 text-right">
+                        <span class="ion-ios-color-wand"></span> need help
+                        <form>
+                            <div class="input-group">
+                                <span class="input-group-btn">
+                                    <button class="btn btn-default btn-robot" type="button">Contact Me</button>
+                                </span>
+                            </div><!-- /input-group -->
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% block header %}
+    {% endblock header %}
+    
+    {% block messages %}
+        {% if messages %}
+        {% for message in messages %}
+        <section>
+            <div>
+                <div class="alert alert-block alert-{{message.tags}} text-center">
+                <button type="button" class="close" data-dismiss="alert" style="color: red">×</button>
+                <strong>{{message}}</strong>
+                </div>
+            </div>
+        </section>
+    {% endfor %}
+    {% endif %}
+    {% endblock %}
+    
+    {% block content %}
+    {% endblock content %}
+
+    <!-- Footer -->
+    <footer class="footer text-center">
+        <h3>&copy;2024 Aroleplaystationcenter</h3>
+    </footer>
+
+    <!-- Scripts -->
+        <script src="{% static 'user/assets/js/jquery-1.12.3.min.js' %}"></script>
+        <script src="{% static 'user/assets/js/bootstrap.min.js' %}"></script>
+        <script src="{% static 'user/assets/js/jquery.magnific-popup.min.js' %}"></script>
+        <script src="{% static 'user/assets/js/owl.carousel.min.js' %}"></script>
+        <script src="{% static 'user/assets/js/script.js' %}"></script>
+        {% block extra %}
+        {% endblock extra %}
+
+    </body>
+</html>

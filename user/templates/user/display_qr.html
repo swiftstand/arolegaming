@@ -1,0 +1,128 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <!-- Font Awesome Icons  -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css"
+        integrity="sha512-+4zCK9k+qNFUR5X+cKL9EIR+ZOhtIloNl9GIKS57V1MyNsYpYcUrUeQc9vNfzsWfV28IaLL3i96P9sdNyeRssA=="
+        crossorigin="anonymous" />
+
+    <script src="https://cdn.rawgit.com/davidshimjs/qrcodejs/gh-pages/qrcode.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins&display=swap" rel="stylesheet">
+    <link href="{% static 'user/assets/css/extra_qr.css' %}" rel="stylesheet">
+
+    <title>QR Code</title>
+
+</head>
+
+<body style="background-color: black;">
+    <form method="post" action="{% url 'web_save_qr' %}">
+        {% csrf_token %}
+        <h2 class="heading"><a style="text-decoration: none;" href="{% url 'web_profile' %}">GO TO PROFILE</a></h2>
+
+        <input type="text" id="curr_code" name="curr_code" {% if code %} value="{{code}}" {% endif %} hidden />
+        <input type="text" id="new_code" name="new_code" value="{{new_code}}" hidden />
+        <input type="text" id="flag" name="flag" value="{{flaggy}}" hidden />
+        <input type="text" id="cur_pay" name="cur_pay" value="{% if code %} {{pay_code}} {% else %}empty{% endif %}" hidden />
+
+        <input type="text" minlength="4" maxlength="4" id="website" name="website" {% if code %} hidden placeholder="enter your pass code" {% else %} placeholder="set a new pass code" {% endif %} required/>
+        <p id="err_txt" class="invalid-feedback  alert alert-danger" style="color: brown;" hidden ></p>
+
+        <div id="qrcode-container">
+            <div id="qrcode" class="qrcode"></div>
+        </div>
+        <button id="genBtn" type="button" class="generateBtn" onclick="generateQRCode(starter=true)">{% if code %} Change QR Code {% else %} Generate A New QR-CODE {% endif %}</button>
+        <button id="saveBtn" type="submit" class="generateBtn" hidden>Save QR Code</button>
+    </form>
+
+    <script>
+
+        function displaySave() {
+
+        }
+        function generateQRCode(starter=null) {
+            document.getElementById("err_txt").hidden = true
+            let website = document.getElementById("curr_code").value;
+            let pay_c = document.getElementById("cur_pay").value;
+            let new_code = document.getElementById("new_code").value
+            let entered_pay = document.getElementById("website").value;
+            let exist_flag = document.getElementById("flag").value;
+
+            if (website) {
+                let user_code= "{{ code }}"
+                console.log("USR : ", user_code, website, pay_c)
+                if (website == user_code){
+                    let qrcodeContainer = document.getElementById("qrcode");
+                    qrcodeContainer.innerHTML = "";
+                    if (starter){
+                        new QRCode(qrcodeContainer, new_code);
+                    }else{
+                        new QRCode(qrcodeContainer, website);
+                    }
+
+                    document.getElementById("qrcode-container").style.display = "block";
+
+                    if (starter){
+                        document.getElementById("website").hidden= false
+                        document.getElementById("genBtn").hidden = true
+                        document.getElementById("saveBtn").hidden = false
+                    } else{
+                        document.getElementById("website").hidden= true
+                        document.getElementById("genBtn").hidden = false
+                        document.getElementById("saveBtn").hidden = true
+                    }
+
+                    return
+                }
+
+                document.getElementById("website").hidden= false
+                if (!entered_pay && exist_flag==0){
+                    document.getElementById("err_txt").innerHTML= "Pass code should be 4 characters long"
+                    document.getElementById("err_txt").hidden = false
+                    return
+                }
+                if (entered_pay.length < 4 && exist_flag==0){
+                    document.getElementById("err_txt").innerHTML= "Pass code must be 4 characters"
+                    document.getElementById("err_txt").hidden = false
+                    return
+                }
+                if (entered_pay != pay_c && pay_c != 'empty' && exist_flag==0){
+                    document.getElementById("err_txt").innerText= "Wrong pass code entered"
+                    document.getElementById("err_txt").hidden = false
+                    return
+                }
+
+                let qrcodeContainer = document.getElementById("qrcode");
+                qrcodeContainer.innerHTML = "";
+                
+                new QRCode(qrcodeContainer, website);
+                document.getElementById("qrcode-container").style.display = "block";
+
+                if (starter){
+                    document.getElementById("genBtn").hidden = true
+                    document.getElementById("saveBtn").hidden = false
+                } else{
+                    document.getElementById("genBtn").hidden = false
+                    document.getElementById("saveBtn").hidden = true
+                }
+
+
+            }
+             else {
+                alert("You don't have a QR-Code generated, please set a pass code and generate ");
+                document.getElementById("curr_code").value = new_code
+            }
+            
+        }
+        generateQRCode()
+    </script>
+</body>
+</html>

@@ -1,0 +1,143 @@
+{% extends 'user/base.html' %}
+{% load static %}
+
+{% block header %}  
+    <!-- Header -->
+    <section id="header" class="main-header">
+        <div class="container">
+
+            <div class="row">
+                <nav class="navbar navbar-default">
+                    <div class="navbar-header">
+                        <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#site-nav-bar" aria-expanded="false">
+                            <span class="sr-only">Toggle navigation</span>
+                            <span class="icon-bar"></span>
+                            <span class="icon-bar"></span>
+                            <span class="icon-bar"></span>
+                        </button>
+                    </div>
+
+                    <div class="collapse navbar-collapse" id="site-nav-bar">
+                        <ul class="nav navbar-nav">
+                            <li class="active"><a href="{% url 'index' %}">Home</a></li>
+                            {% if request.user.is_authenticated %}
+                                <li><a href="{% url 'web_profile' %}">Profile</a></li>
+                                <li><a href="{% url 'web_logout' %}">Logout</a></li>
+                            {% else %}
+                                <li><a href="{% url 'web_login' %}">Login</a></li>
+                                <li><a href="{% url 'web_register' %}">Register</a></li>
+                            {% endif %}
+                        </ul>
+                    </div><!-- /.navbar-collapse -->
+                </nav>
+            </div>
+            
+            <div class="intro row">
+                <div class="overlay"></div>
+                <div class="col-sm-6 col-sm-offset-6">
+                    <h2 class="header-quote">Welcome To Our E-wallet</h2>
+                    <h1 class="header-title">Arole<br><span class="thin">Playstation Center</span></h1>
+                </div>
+            </div> <!-- /.intro.row -->
+        </div> <!-- /.container -->
+        <div class="nutral"></div>
+    </section> <!-- /#header -->
+{% endblock header %}
+
+
+{% block content %}
+    <!-- Product -->
+    <section id="product" class="product">
+        <div class="container page-bgc"> 
+            <!-- class="container section-bg"> -->
+            <div class="row">
+                <div class="col-sm-12">
+                    <div class="title-box">
+                        <h2 class="title mt0">Know the platform</h2>
+                    </div>
+                </div>
+            </div>
+
+
+            <!-- Services -->
+            <div class="service">
+                <div class="row">
+                    <div class="boxed">
+                        <div class="col-sm-4">
+                            <div class="service-box">
+                                <div class="service-title">
+                                    <div class="icon">
+                                        <span class="ion-ios-monitor"></span>
+                                    </div>
+                                     <div class="mt-10">
+                                        DIY-Friendly
+                                    </div>
+                                </div>
+                                <p>
+                                    The App is User Straight forward and user friendly.
+                                </p>
+                            </div>
+                        </div>
+                        <div class="col-sm-4">
+                            <div class="service-box">
+                                <div class="service-title">
+                                    <div class="icon">
+                                        <span class="ion-person"></span>
+                                    </div>
+                                     <div class="mt-10">
+                                        Amazing support
+                                    </div>
+                                </div>
+                                <p>
+                                    Amazing support by clicking on <b>contact-me</b> button above to directly chat with manager on whatsapp.
+                                </p>
+                            </div>
+                        </div>
+                        <div class="col-sm-4">
+                            <div class="service-box">
+                                <div class="service-title">
+                                    <div class="icon">
+                                        <span class="ion-ios-cloud-upload"></span>
+                                    </div>
+                                     <div>
+                                        In the cloud
+                                    </div>
+                                </div>
+                                <p>
+                                    Can easily be accessible from any where.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- History -->
+        <!-- <section id="history" class="history">
+            <div class="container section-bg">
+                <div class="row">
+                    <div class="col-sm-12">
+                        <div class="title-box">
+                            <p>Since 1990</p>
+                            <h2 class="title mt0">Discover our history</h2>
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="boxed">
+                        <div class="col-sm-10 col-sm-offset-1">
+                            <p>
+                                Lorem ipsum dolor sit amet consectetuer adipiscing elit sed diam nonummynibh euismod tincidunt ut laoree Dolore magna aliquam erat volutpat.Lorem ipsum dolor sit amet consectetuer adipiscing elit sed diam nonummynibh euismod tincidunt ut laoree Dolore magna aliquam erat .
+                            </p>
+                        </div>
+                        <div class="col-sm-12">
+                            <img class="img-responsive" src="assets/images/history.png" alt="history">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section> -->
+
+{% endblock content %}

@@ -17,9 +17,19 @@ from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
+from user.views import home_page, register, web_profile, display_qr, web_save_qr, web_login, payment_webhook, callback_endpoint, web_logout
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path('', home_page, name="index"),
+    path('web/register/', register, name="web_register"),
+    path('web/login/', web_login, name="web_login"),
+    path('web/logout/', web_logout, name="web_logout"),
+    path('web/profile/', web_profile, name="web_profile"),
+    path('web/qr/', display_qr, name="display_qr"),
+    path('web/save/', web_save_qr, name="web_save_qr"),
+    path('arole/pay/webhook/', payment_webhook, name="web_hook"),
+    path('arole/callback/', callback_endpoint, name='deliver_value'),
 
     #REST FRAMEWORK
     path('api/user/', include('user.api.urls',)),

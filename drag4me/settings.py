@@ -49,7 +49,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'rest_framework.authtoken',
     'corsheaders',
-    'storages'
+    'storages',
 ]
 
 REST_FRAMEWORK = {
@@ -143,7 +143,7 @@ USE_L10N = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/3.0/howto/static-files/
 TEST = "https://arolegaming.pythonanywhere.com"
-LOCAL =  "http://192.168.1.196:8000"
+LOCAL =  "http://192.168.56.56:8000"
 PROD = ""
 MY_SITE = LOCAL
 
@@ -162,6 +162,13 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 AUTH_USER_MODEL= 'user.User'
 
 CORS_ORIGIN_ALLOW_ALL = True
+
+PUBLIC_KEY = os.environ.get('paystack_public', "FLWPUBK_TEST-60c00b51d6cf9dd5f372c47e9efc8587-X")
+SECRET_KEY = os.environ.get('paystack_secret', "FLWSECK_TEST-c08f710bd7097c8e3f22bf6a3dacab68-X")
+
+HASH_ENC = os.environ.get("pay_hash", "FLWSECK_TEST7080904cc8cf")
+
+# PRD_SECRET = 
 
 NUMBER_OF_TICKETS = 1000
 
