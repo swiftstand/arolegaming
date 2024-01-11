@@ -145,8 +145,8 @@ USE_L10N = True
 # https://docs.djangoproject.com/en/3.0/howto/static-files/
 TEST = "https://arolegaming.pythonanywhere.com"
 LOCAL =  "http://192.168.56.56:8000"
-PROD = ""
-MY_SITE = LOCAL
+PROD = "https://arole-playstation-center.onrender.com"
+MY_SITE = PROD
 
 LOGIN_REDIRECT_URL= 'index'
 LOGIN_URL = 'login'
