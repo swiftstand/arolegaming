@@ -165,7 +165,7 @@ def web_profile(request):
                 "amount": request.POST['amount'],
                 "currency": "NGN",
                 "payment_options": "banktransfer, card",
-                "redirect_url": "" +  red_url,
+                # "redirect_url": "" +  red_url,
                 # "webhook_url": #settings.MY_SITE + f"/arole/pay/webhook/",
                 # "meta": {
                 #     "consumer_id": 23,
