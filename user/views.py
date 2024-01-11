@@ -53,7 +53,7 @@ def register(request):
                 form.save()
                 new_user= authenticate(email=form.cleaned_data['email'],password=form.cleaned_data['password1'])
                 login(request,new_user)
-                return redirect('index')
+                return redirect('web_profile')
         else:
             form=UserRegistrationForm()  
     else:
@@ -69,7 +69,7 @@ def web_login(request):
             if form.is_valid():
                 new_user= authenticate(email=form.cleaned_data['email'],password=form.cleaned_data['password'])
                 login(request,new_user)
-                return redirect('index')
+                return redirect('web_profile')
         else:
             form=UserRegistrationForm()  
     else:
@@ -165,7 +165,7 @@ def web_profile(request):
                 "amount": request.POST['amount'],
                 "currency": "NGN",
                 "payment_options": "banktransfer, card",
-                # "redirect_url": "" +  red_url,
+                "redirect_url": "" +  red_url,
                 # "webhook_url": #settings.MY_SITE + f"/arole/pay/webhook/",
                 # "meta": {
                 #     "consumer_id": 23,
@@ -187,7 +187,7 @@ def web_profile(request):
             checkout_url= trans_info['data']['link']
             return HttpResponseRedirect(checkout_url)
         except:
-            messages.error(request, f"Unabble to fund: {request.POST['amount']}")
+            messages.error(request, f"Unable to fund: {request.POST['amount']}")
 
     return render(request, html_template, {'pay_key': paystack_key})
 
