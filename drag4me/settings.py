@@ -115,7 +115,7 @@ if os.environ.get("API_ENV", "dev") == "prd":
     'NAME': os.environ['DATABASE_NAME'],
     'USER': os.environ['RDS_USERNAME'],
     'PASSWORD': os.environ['RDS_PASSWORD'],
-    'HOST': os.environ["RSD_HOST"],
+    'HOST': os.environ["RDS_HOST"],
     'PORT': int(os.environ['RDS_PORT']),
     }      
 
