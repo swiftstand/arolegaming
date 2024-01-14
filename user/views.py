@@ -2,7 +2,7 @@ from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import render, redirect
 
 from django.core.mail import send_mail, EmailMultiAlternatives
-from user.arole import send_reset_mail, generate_content
+from user.arole import generate_content
 from .froms import UserRegistrationForm, UserLoginForm
 from django.contrib.auth import login,authenticate, logout
 from django.contrib.auth.decorators import login_required,user_passes_test

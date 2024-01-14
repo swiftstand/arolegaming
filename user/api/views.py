@@ -9,7 +9,7 @@ from rest_framework.response import Response
 from rest_framework.decorators import api_view, permission_classes, parser_classes, action
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.authtoken.models import Token
-from user.arole import generate_content, send_reset_mail
+from user.arole import generate_content
 from user.models import User, DragProfile, FollowManager, Transaction
 from django.core.mail import EmailMultiAlternatives
 from user.api.serializers import RegistrationSerializer,LoginSerializer, CreateDragProfileSerializer
@@ -187,7 +187,7 @@ def forgotpassword(request):
     data = {}
     email = request.data['email']
     subject = 'Reset Password | Arole-Gaming'
-    
+
     try:
         user=User.objects.get(email=email)
         token, created = Token.objects.get_or_create(user=user)
