@@ -84,6 +84,9 @@ class User(AbstractBaseUser):
 
     objects = CustomUserManager()
 
+    class Meta:
+        db_table = "z_arole_users"
+
     def __str__(self):
         return self.email
 
@@ -220,6 +223,7 @@ class DragProfile(models.Model):
     class Meta:
         verbose_name = "Branch Profile"
         verbose_name_plural  = "Branch Profiles"
+        db_table= "z_arole_branches"
 
 class Transaction(models.Model):
     payer = models.ForeignKey(settings.AUTH_USER_MODEL, null=True,on_delete=models.SET_NULL)
@@ -239,6 +243,10 @@ class Transaction(models.Model):
             return f'{self.payer.fullname} funded ₦{self.amount} via {self.description}'
         else:
             return f'{self.branch_name} Branch billed {self.payer.fullname} ₦{self.amount}'
+    
+
+    class Meta:
+        db_table = "z_arole_transactions"
 
 
 
@@ -266,4 +274,5 @@ class FollowManager(models.Model):
         )
 
 
-   
+    class Meta:
+        db_table = "z_arole_follow_manager"

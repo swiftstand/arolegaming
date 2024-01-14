@@ -109,11 +109,24 @@ WSGI_APPLICATION = 'drag4me.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/3.0/ref/settings/#databases
 
-DATABASES = {
-    'default': {
+if os.environ.get("API_ENV", "dev") == "prd":
+    db = {
+    'ENGINE': "django.db.backends.postgresql",
+    'NAME': os.environ['DATABASE_NAME'],
+    'USER': os.environ['RDS_USERNAME'],
+    'PASSWORD': os.environ['RDS_PASSWORD'],
+    'HOST': os.environ["RSD_HOST"],
+    'PORT': int(os.environ['RDS_PORT']),
+    }      
+
+else:
+    db = {
         'ENGINE': 'django.db.backends.sqlite3',
         'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
     }
+
+DATABASES = {
+    'default': db
 }
 
 

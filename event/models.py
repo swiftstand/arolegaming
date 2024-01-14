@@ -29,6 +29,10 @@ class DragEvent(models.Model):
         return '{} hosted by @{}'.format(self.title, self.performer.username)
     
 
+    class Meta:
+        db_table = "z_arole_event"
+    
+
 class City(models.Model):
     name = models.CharField(max_length=500, null=True)
     key = models.IntegerField(null=True, editable=False)
@@ -39,6 +43,9 @@ class City(models.Model):
     
     class Meta:
         verbose_name_plural = 'Cities'
+
+    class Meta:
+        db_table = "z_arole_city"
     
 
 
@@ -48,3 +55,6 @@ class Bookmark(models.Model):
 
     def __str__(self) -> str:
         return 'Events bookmarked by {}'.format(self.owner.email)
+    
+    class Meta:
+        db_table = "z_arole_bookmark"
