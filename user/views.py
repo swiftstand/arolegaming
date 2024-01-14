@@ -1,5 +1,8 @@
 from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import render, redirect
+
+from django.core.mail import send_mail, EmailMultiAlternatives
+from user.arole import send_reset_mail, generate_content
 from .froms import UserRegistrationForm, UserLoginForm
 from django.contrib.auth import login,authenticate, logout
 from django.contrib.auth.decorators import login_required,user_passes_test
@@ -32,7 +35,7 @@ def create_ref():
     for  i in itertools.count(1):
         if result not in User.objects.filter(qr_id=result).values_list('qr_id',flat=True):
             break
-        generate_code()
+        create_ref()
 
     return result
 
@@ -97,7 +100,7 @@ def payment_webhook(request):
     verified= verify_transaction(payload['data'['id']])
 
     try:
-        if verified["status"]== "success":
+        if verified["status"]== "success" or payload["event"]== "charge.completed":
             user_mail= verified["data"]["tx_ref"].split("-")[-1]
             user= User.objects.get(email= user_mail)
             trans= Transaction.objects.get(payer= user, reference=verified["data"]["tx_ref"])
@@ -235,3 +238,94 @@ def web_save_qr(request):
 
     messages.success(request, msg)
     return redirect("web_profile")
+
+
+def set_resetter():
+    size = random.choice([10,11,12])
+    entity=ascii_letters+'123456789'
+    value=''
+    for  i in itertools.count(1):
+        for i in range(0,size):
+            pick = str(random.choice(entity))
+            value+=pick
+        if value not in User.objects.filter(resetter=value).values_list('resetter',flat=True):
+            break
+        set_resetter()
+    return value
+
+
+def web_request_reset(request):
+    html_template='user/request_reset.html'
+    data = {}
+    subject = 'Reset Password | Arole-Gaming'
+
+    if request.method=='POST':
+        try:
+            email = request.POST['email']
+            user= User.objects.get(email=email)
+            if not user.resetter:
+                reset_val= set_resetter()
+            else:
+                reset_val = user.resetter
+            name = user.fullname
+
+            text_message, message = generate_content(name, reset_val)
+            recipient_list = [user.email]
+
+            msg=EmailMultiAlternatives(subject,text_message, settings.DEFAULT_FROM_EMAIL,recipient_list)
+            msg.attach_alternative(message,'text/html')
+            sent = msg.send() #False 
+
+            if sent:
+                user.resetter= reset_val
+                user.save(update_fields=['resetter'])
+
+                messages.success(request, "Mail has been sent successfully")
+                print("here : ", reset_val)
+                return redirect("web_confirm_reset")
+            else:
+                messages.error(request, "we couldn't send you a mail right now please try again later")
+
+        except User.DoesNotExist:
+            messages.error(request, "No user with this account exists in our records")
+    print("AFTER")
+    return render(request, html_template)
+
+
+
+def web_complete_password_reset(request):
+    html_template='user/confirm_reset.html'
+    print("reach Here")
+    if request.method == 'POST':
+        try:
+
+            if request.POST['password'] != request.POST['password2']:
+                messages.error(request, "passwords do not match")
+                return redirect("web_confirm_reset")
+            
+            user= User.objects.get(email=request.POST["email"])
+            if request.POST["reset_code"] != user.resetter:
+                messages.error(request, "Invalid code was provided")
+                return redirect("web_confirm_reset")
+
+            reset_load= {
+                "email" : request.POST["email"],
+                "password" : request.POST["password"],
+                "code" : request.POST["reset_code"]
+            }
+            user.set_password(reset_load["password"])
+            user.resetter=None
+            user.save()
+
+            messages.success(request, "Password was resseted sucessfully, please try to login with new details")
+            return redirect("web_login")
+            
+        except Exception as Err:
+            print("fg : ", Err)
+            messages.success(request, "we could not reset your password, most likely because the email you provided does not have an account with us, if otherwise feel free to contact us.")
+        
+    return render(request, html_template)
+
+
+
+

@@ -9,8 +9,9 @@ from rest_framework.response import Response
 from rest_framework.decorators import api_view, permission_classes, parser_classes, action
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.authtoken.models import Token
+from user.arole import generate_content, send_reset_mail
 from user.models import User, DragProfile, FollowManager, Transaction
-# from user.arole import send_reset_mail
+from django.core.mail import EmailMultiAlternatives
 from user.api.serializers import RegistrationSerializer,LoginSerializer, CreateDragProfileSerializer
 from random import choice, shuffle
 from string import ascii_letters
@@ -180,11 +181,13 @@ def set_resetter():
         set_resetter()
     return value
 
+
 @api_view(['POST'])
 def forgotpassword(request):
     data = {}
     email = request.data['email']
-
+    subject = 'Reset Password | Arole-Gaming'
+    
     try:
         user=User.objects.get(email=email)
         token, created = Token.objects.get_or_create(user=user)
@@ -192,17 +195,29 @@ def forgotpassword(request):
             token.delete()
             token = Token.objects.create(user=user)
         token.save()
-        reset_val=set_resetter()
-        user.resetter= "123456" #reset_val
-        name = user.firstname
-        # try:
 
-        # send_reset_mail(receiver=email, code=user.resetter, name=name)
-        # except Exception as e:
-        #     raise e
-        user.save(update_fields=['resetter'])
-        data['status'] = 'success'
-        data['token'] = token.key
+        if not user.resetter:
+            reset_val= set_resetter()
+        else:
+            reset_val = user.resetter
+
+        name = user.fullname
+        text_message, message = generate_content(name, reset_val)
+        recipient_list = [user.email]
+
+        msg=EmailMultiAlternatives(subject,text_message, settings.DEFAULT_FROM_EMAIL,recipient_list)
+        msg.attach_alternative(message,'text/html')
+        sent = msg.send() #False 
+
+        if sent:
+            user.resetter= reset_val
+            user.save(update_fields=['resetter'])
+            data['status'] = 'success'
+            data['token'] = token.key
+        else:
+            data['status'] = 'fail'
+            data['info'] = 'We cannot send you mail right now, check your mail address or contact us'
+
     except User.DoesNotExist:
         data['status'] = 'fail'
         data['info'] = 'The email provided does not exist in our system'
@@ -220,7 +235,7 @@ def confirm_reset(request):
     if provided_resetter == user.resetter:
         new_password = request.data['password']
         user.set_password(new_password)
-        user.resetter=''
+        user.resetter=None
         user.save()
         data['status']='success'
         data['token']=token.key

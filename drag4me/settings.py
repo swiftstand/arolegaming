@@ -62,6 +62,17 @@ REST_FRAMEWORK = {
 }
 
 
+DEFAULT_FROM_EMAIL = os.environ.get('FROM_SENDER')
+EMAIL_STARTTLS = True
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.privateemail.com'
+EMAIL_HOST_USER = os.environ.get('MAIL_SENDER') 
+EMAIL_HOST_PASSWORD = os.environ.get('SENDER_PASSWORD')
+EMAIL_PORT = 465
+EMAIL_USE_SSL = True
+EMAIL_USE_TSL = False
+
+
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
